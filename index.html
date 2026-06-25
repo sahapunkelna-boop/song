@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Request System - Ultimate Bundle</title>
+    <title>Music Request System - Cloud Real-time</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -187,14 +187,32 @@
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    <script>
+        // 🔗 บัญชี Firebase ส่วนตัวสำหรับโปรเจกต์ของร้านคุณเรียบร้อยแล้วครับ
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9TWZbygXniEE2gE0SU08mFnaeCH2wlz8",
+            authDomain: "my-shop-music.firebaseapp.com",
+            databaseURL: "https://my-shop-music-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-shop-music",
+            storageBucket: "my-shop-music.firebasestorage.app",
+            messagingSenderId: "113291989652",
+            appId: "1:113291989652:web:cc529e1558f661e29f5a81",
+            measurementId: "G-SM2FQCB6YS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const songsRef = ref(db, 'songs');
+
         const YT_API_KEY = 'AIzaSyComYbMyJPLjnQEErW_V7q4xpYZcNkIfdk'; 
         const DJ_PASSWORD = '1'; 
         
         let currentRole = 'customer';
         let currentTab = 'pending'; 
-        let songQueue = JSON.parse(localStorage.getItem('songQueue')) || [];
+        let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
 
@@ -210,58 +228,27 @@
             const urlParams = new URLSearchParams(window.location.search);
             const tableParam = urlParams.get('table');
             if(tableParam) tableSelect.value = tableParam;
-            
-            // เรียกซิงค์ชื่อเพลงที่กำลังค้างอยู่ในระบบ (ถ้ามี)
-            syncCurrentlyPlayingTitle();
-            renderQueue();
 
             document.getElementById('djPasswordInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') verifyDjPassword();
             });
         }
 
-        function onYouTubeIframeAPIReady() {}
-
-        function extractYouTubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function formatISO8601Duration(isoDuration) {
-            if (!isoDuration) return "00:00";
-            const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-            if (!match) return "00:00";
-            const hours = parseInt(match[1] || 0);
-            const minutes = parseInt(match[2] || 0);
-            const seconds = parseInt(match[3] || 0);
-            let result = "";
-            if (hours > 0) result += hours + ":" + (minutes < 10 ? "0" : "");
-            result += minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-            return result;
-        }
-
-        // ตรวจสอบข้อมูลใน LocalStorage ว่ามีเพลงไหนสถานะกำลังเล่นอยู่เพื่อมาแสดงผลค้างไว้
-        function syncCurrentlyPlayingTitle() {
-            const activeSong = songQueue.find(item => item.status === 'playing');
-            const customerTitle = document.getElementById('customerPlayingTitle');
-            const adminTitle = document.getElementById('playingTitle');
-            const vinyl = document.getElementById('vinylIcon');
-
-            if (activeSong) {
-                currentlyPlayingId = activeSong.id;
-                customerTitle.innerText = activeSong.song;
-                adminTitle.innerText = activeSong.song;
-                vinyl.classList.remove('hidden');
-            } else {
-                currentlyPlayingId = null;
-                customerTitle.innerText = "ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง";
-                adminTitle.innerText = "ยังไม่ได้เลือกเพลง";
-                vinyl.classList.add('hidden');
+        // ดึงข้อมูล Real-time จาก Google Firebase ของร้านคุณ
+        onValue(songsRef, (snapshot) => {
+            const data = snapshot.val();
+            songQueue = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    songQueue.push({ id: key, ...data[key] });
+                });
+                songQueue.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
-        }
+            syncCurrentlyPlayingTitle();
+            renderQueue();
+        });
 
-        function searchSongList() {
+        window.searchSongList = function() {
             const query = document.getElementById('songName').value.trim();
             const songListContainer = document.getElementById('youtubeSongsList');
             
@@ -350,13 +337,32 @@
                 });
         }
 
+        function extractYouTubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function formatISO8601Duration(isoDuration) {
+            if (!isoDuration) return "00:00";
+            const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!match) return "00:00";
+            const hours = parseInt(match[1] || 0);
+            const minutes = parseInt(match[2] || 0);
+            const seconds = parseInt(match[3] || 0);
+            let result = "";
+            if (hours > 0) result += hours + ":" + (minutes < 10 ? "0" : "");
+            result += minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+            return result;
+        }
+
         function selectThisSong(title, url) {
             document.getElementById('songName').value = title;
             document.getElementById('selectedVideoUrl').value = url; 
             document.getElementById('youtubeSongsList').classList.add('hidden');
         }
 
-        function submitSong(event) {
+        window.submitSong = function(event) {
             event.preventDefault();
             const tableNo = document.getElementById('tableNo').value;
             let songName = document.getElementById('songName').value.trim();
@@ -371,31 +377,49 @@
                 videoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`;
             }
 
+            const maxOrder = songQueue.reduce((max, item) => (item.order > max ? item.order : max), 0);
+
             const newSong = {
-                id: Date.now(),
                 table: tableNo,
                 song: songName,
                 url: videoUrl,
                 time: timestamp,
-                status: 'pending'
+                status: 'pending',
+                order: maxOrder + 1
             };
 
-            songQueue.push(newSong);
-            localStorage.setItem('songQueue', JSON.stringify(songQueue));
+            push(songsRef, newSong).then(() => {
+                const alertBox = document.getElementById('statusAlert');
+                alertBox.className = "block text-center p-4 rounded-xl font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg animate-bounce";
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ส่งคำขอเพลงเข้าสู่ระบบคลาวด์สำเร็จแล้ว!`;
 
-            const alertBox = document.getElementById('statusAlert');
-            alertBox.className = "block text-center p-4 rounded-xl font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg animate-bounce";
-            alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ส่งคำขอเพลงเข้าสู่ระบบสำเร็จแล้ว!`;
-
-            document.getElementById('requestForm').reset();
-            document.getElementById('selectedVideoUrl').value = '';
-            document.getElementById('youtubeSongsList').classList.add('hidden');
-            
-            renderQueue();
-            setTimeout(() => { alertBox.className = "hidden"; }, 4000);
+                document.getElementById('requestForm').reset();
+                document.getElementById('selectedVideoUrl').value = '';
+                document.getElementById('youtubeSongsList').classList.add('hidden');
+                setTimeout(() => { alertBox.className = "hidden"; }, 4000);
+            });
         }
 
-        function switchQueueTab(tabName) {
+        function syncCurrentlyPlayingTitle() {
+            const activeSong = songQueue.find(item => item.status === 'playing');
+            const customerTitle = document.getElementById('customerPlayingTitle');
+            const adminTitle = document.getElementById('playingTitle');
+            const vinyl = document.getElementById('vinylIcon');
+
+            if (activeSong) {
+                currentlyPlayingId = activeSong.id;
+                customerTitle.innerText = activeSong.song;
+                adminTitle.innerText = activeSong.song;
+                vinyl.classList.remove('hidden');
+            } else {
+                currentlyPlayingId = null;
+                customerTitle.innerText = "ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง";
+                adminTitle.innerText = "ยังไม่ได้เลือกเพลง";
+                vinyl.classList.add('hidden');
+            }
+        }
+
+        window.switchQueueTab = function(tabName) {
             currentTab = tabName;
             ['pending', 'playing', 'completed'].forEach(t => {
                 const btn = document.getElementById(`tabBtn-${t}`);
@@ -414,7 +438,7 @@
             const queueList = document.getElementById('queueList');
             const emptyState = document.getElementById('emptyState');
             
-            const pendingSongs = songQueue.filter(item => item.status === 'pending' || !item.status);
+            const pendingSongs = songQueue.filter(item => item.status === 'pending');
             const playingSongs = songQueue.filter(item => item.status === 'playing');
             const completedSongs = songQueue.filter(item => item.status === 'completed');
             
@@ -451,7 +475,7 @@
                 
                 const safeSongTitle = item.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 const ytId = extractYouTubeId(item.url);
-                const playCall = ytId ? `initAndPlayPlayer('${ytId}', '${safeSongTitle}', ${item.id})` : `alert('กรุณาเปิดลิงก์ภายนอก')`;
+                const playCall = ytId ? `initAndPlayPlayer('${ytId}', '${safeSongTitle}', '${item.id}')` : `alert('กรุณาเปิดลิงก์ภายนอก')`;
 
                 const thumbnailHtml = ytId 
                     ? `<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" class="w-16 h-10 object-cover rounded bg-slate-800 border border-slate-700/50 shrink-0" alt="Cover">`
@@ -480,7 +504,7 @@
                         <button onclick="${playCall}" class="flex-1 text-center bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
                             <i class="fa-brands fa-youtube"></i> เล่นในเว็บ
                         </button>
-                        <button onclick="moveToStatus(${item.id}, 'completed')" class="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 py-1.5 px-3 rounded-lg text-[11px] transition-all cursor-pointer">
+                        <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 py-1.5 px-3 rounded-lg text-[11px] transition-all cursor-pointer">
                             <i class="fa-solid fa-check mr-1"></i> เสร็จสิ้น
                         </button>
                     `;
@@ -489,16 +513,16 @@
                         <div class="flex-1 text-xs text-rose-400 flex items-center gap-1.5 font-medium px-1">
                             <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> กำลังออนแอร์...
                         </div>
-                        <button onclick="moveToStatus(${item.id}, 'completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-4 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1">
+                        <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-4 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-circle-check"></i> จบเพลงนี้
                         </button>
                     `;
                 } else if (currentTab === 'completed') {
                     actionButtonsHtml = `
-                        <button onclick="moveToStatus(${item.id}, 'pending')" class="flex-1 text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
+                        <button onclick="moveToStatus('${item.id}', 'pending')" class="flex-1 text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
                             <i class="fa-solid fa-rotate-left text-amber-400"></i> ดึงกลับคิวรอใหม่
                         </button>
-                        <button onclick="removeQueuePermanently(${item.id})" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                     `;
                 }
 
@@ -527,62 +551,71 @@
             });
         }
 
-        function moveToStatus(id, newStatus) {
-            songQueue = songQueue.map(item => {
-                if (item.id === id) return { ...item, status: newStatus };
-                if (newStatus === 'playing' && item.status === 'playing' && item.id !== id) {
-                    return { ...item, status: 'completed' };
-                }
-                return item;
-            });
-            saveQueueAndRefresh();
-            syncCurrentlyPlayingTitle();
+        window.moveToStatus = function(id, newStatus) {
+            const song = songQueue.find(s => s.id === id);
+            if (!song) return;
+
+            const updates = {};
+            updates[`/songs/${id}/status`] = newStatus;
+
+            if (newStatus === 'playing') {
+                songQueue.forEach(item => {
+                    if (item.status === 'playing' && item.id !== id) {
+                        updates[`/songs/${item.id}/status`] = 'completed';
+                    }
+                });
+            }
+
+            update(ref(db), updates);
         }
 
-        function moveQueueUp(index) {
+        window.moveQueueUp = function(index) {
             let prevPendingIndex = -1;
             for (let i = index - 1; i >= 0; i--) {
-                if (songQueue[i].status === 'pending' || !songQueue[i].status) {
+                if (songQueue[i].status === 'pending') {
                     prevPendingIndex = i;
                     break;
                 }
             }
             if (prevPendingIndex !== -1) {
-                let temp = songQueue[index];
-                songQueue[index] = songQueue[prevPendingIndex];
-                songQueue[prevPendingIndex] = temp;
-                saveQueueAndRefresh();
+                const currentOrder = songQueue[index].order;
+                const prevOrder = songQueue[prevPendingIndex].order;
+                
+                const updates = {};
+                updates[`/songs/${songQueue[index].id}/order`] = prevOrder;
+                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
+                update(ref(db), updates);
             }
         }
 
-        function moveQueueDown(index) {
+        window.moveQueueDown = function(index) {
             let nextPendingIndex = -1;
             for (let i = index + 1; i < songQueue.length; i++) {
-                if (songQueue[i].status === 'pending' || !songQueue[i].status) {
+                if (songQueue[i].status === 'pending') {
                     nextPendingIndex = i;
                     break;
                 }
             }
             if (nextPendingIndex !== -1) {
-                let temp = songQueue[index];
-                songQueue[index] = songQueue[nextPendingIndex];
-                songQueue[nextPendingIndex] = temp;
-                saveQueueAndRefresh();
+                const currentOrder = songQueue[index].order;
+                const nextOrder = songQueue[nextPendingIndex].order;
+                
+                const updates = {};
+                updates[`/songs/${songQueue[index].id}/order`] = nextOrder;
+                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
+                update(ref(db), updates);
             }
         }
 
-        function saveQueueAndRefresh() {
-            localStorage.setItem('songQueue', JSON.stringify(songQueue));
-            renderQueue();
-        }
-
-        function initAndPlayPlayer(videoId, songTitle, queueId) {
-            songQueue = songQueue.map(item => {
-                if (item.id === queueId) return { ...item, status: 'playing' };
-                if (item.status === 'playing') return { ...item, status: 'completed' };
-                return item;
+        window.initAndPlayPlayer = function(videoId, songTitle, queueId) {
+            const updates = {};
+            updates[`/songs/${queueId}/status`] = 'playing';
+            songQueue.forEach(item => {
+                if (item.status === 'playing' && item.id !== queueId) {
+                    updates[`/songs/${item.id}/status`] = 'completed';
+                }
             });
-            localStorage.setItem('songQueue', JSON.stringify(songQueue));
+            update(ref(db), updates);
             
             const playerContainer = document.getElementById('videoPlayerContainer');
             const alertBox = document.getElementById('playerFallbackAlert');
@@ -595,8 +628,6 @@
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-                syncCurrentlyPlayingTitle();
-                renderQueue();
                 return;
             }
 
@@ -612,13 +643,11 @@
             });
 
             document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-            syncCurrentlyPlayingTitle();
-            renderQueue();
         }
 
-        function closeVideoPlayer() {
+        window.closeVideoPlayer = function() {
             if (player && typeof player.stopVideo === 'function') player.stopVideo();
-            if (currentlyPlayingId) moveToStatus(currentlyPlayingId, 'completed');
+            if (currentlyPlayingId) window.moveToStatus(currentlyPlayingId, 'completed');
             
             document.getElementById('youtubePlayer').innerHTML = `
                 <div class="text-center p-4">
@@ -628,14 +657,13 @@
             `;
             player = null; 
             document.getElementById('playerFallbackAlert').classList.add('hidden');
-            syncCurrentlyPlayingTitle();
         }
 
-        function copyToClipboard(url) {
+        window.copyToClipboard = function(url) {
             navigator.clipboard.writeText(url).then(() => alert('คัดลอกลิงก์เรียบร้อยแล้ว!'));
         }
 
-        function handleRoleToggle() {
+        window.handleRoleToggle = function() {
             if (currentRole === 'customer') openPasswordModal(); else switchToCustomerView();
         }
 
@@ -647,11 +675,11 @@
             passInput.focus();
         }
 
-        function closePasswordModal() {
+        window.closePasswordModal = function() {
             document.getElementById('passwordModal').classList.replace('flex', 'hidden');
         }
 
-        function verifyDjPassword() {
+        window.verifyDjPassword = function() {
             const enteredPassword = document.getElementById('djPasswordInput').value;
             if (enteredPassword === DJ_PASSWORD) {
                 closePasswordModal();
@@ -683,18 +711,17 @@
             syncCurrentlyPlayingTitle();
         }
 
-        function removeQueuePermanently(id) {
-            if (confirm('คุณต้องการลบคิวเพลงนี้ใช่หรือไม่?')) {
-                songQueue = songQueue.filter(item => item.id !== id);
-                saveQueueAndRefresh();
+        window.removeQueuePermanently = function(id) {
+            if (confirm('คุณต้องการลบคิวเพลงนี้ออกจากระบบคลาวด์ใช่หรือไม่?')) {
+                remove(ref(db, `songs/${id}`));
             }
         }
 
-        function clearAllQueue() {
-            if(confirm('ต้องการล้างคิวเพลงทั้งหมด?')) {
-                songQueue = [];
-                saveQueueAndRefresh();
-                closeVideoPlayer();
+        window.clearAllQueue = function() {
+            if(confirm('ต้องการล้างคิวเพลงทั้งหมดออกจากฐานข้อมูล?')) {
+                set(songsRef, null).then(() => {
+                    closeVideoPlayer();
+                });
             }
         }
     </script>
