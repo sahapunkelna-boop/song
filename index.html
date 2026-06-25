@@ -485,12 +485,6 @@
             return result;
         }
 
-        function selectThisSong(title, url) {
-            document.getElementById('songName').value = title;
-            document.getElementById('selectedVideoUrl').value = url; 
-            document.getElementById('youtubeSongsList').classList.add('hidden');
-        }
-
         window.submitSong = function(event) {
             event.preventDefault();
             const tableNo = document.getElementById('tableNo').value;
@@ -746,8 +740,25 @@
                 
                 const updates = {};
                 updates[`/songs/${songQueue[index].id}/order`] = nextOrder;
-                updates[`/songs/${songQueue[nextPendingIndex].id}/order`] = currentOrder;
+                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
                 update(ref(db), updates);
+            }
+        }
+
+        // ฟังก์ชันสำหรับค้นหาคิวถัดไปและเล่นต่ออัตโนมัติ
+        window.playNextTrack = function() {
+            const nextSong = songQueue.find(item => item.status === 'pending');
+            if (nextSong) {
+                const ytId = extractYouTubeId(nextSong.url);
+                if (ytId) {
+                    const safeSongTitle = nextSong.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
+                } else {
+                    window.moveToStatus(nextSong.id, 'completed');
+                    window.playNextTrack();
+                }
+            } else {
+                window.closeVideoPlayer();
             }
         }
 
@@ -772,6 +783,9 @@
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+                
+                // อัปเดตตัวแปรระบุวิดีโอปัจจุบันเพื่อใช้จัดการสถานะเวลาเล่นจบ
+                player.queueId = queueId; 
                 return;
             }
 
@@ -783,8 +797,21 @@
             player = new YT.Player('youtubePlayerObject', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'autoplay': 1, 'playsinline': 1 },
-                events: { 'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden') }
+                events: { 
+                    'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden'),
+                    'onStateChange': function(event) {
+                        // event.data === 0 (YT.PlayerState.ENDED) คือสัญญาณว่าวิดีโอเล่นจบแล้ว
+                        if (event.data === 0) {
+                            const currentId = player.queueId || queueId;
+                            window.moveToStatus(currentId, 'completed');
+                            setTimeout(() => {
+                                window.playNextTrack();
+                            }, 1000);
+                        }
+                    }
+                }
             });
+            player.queueId = queueId;
 
             document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
         }
