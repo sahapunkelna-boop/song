@@ -121,9 +121,14 @@
                                 </span>
                                 <span class="truncate">กำลังเล่นอยู่: <span id="playingTitle" class="text-slate-200 font-normal">ยังไม่ได้เลือกเพลง</span></span>
                             </span>
-                            <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-1.5 px-3 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
-                                <i class="fa-solid fa-xmark mr-1"></i> ปิดเครื่องเล่น
-                            </button>
+                            <div class="flex gap-2 shrink-0 ml-2">
+                                <button onclick="window.skipToNextTrack()" class="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold py-1.5 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-1">
+                                    <i class="fa-solid fa-forward"></i> เล่นคิวต่อไป
+                                </button>
+                                <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-1.5 px-3 rounded-lg transition-all cursor-pointer">
+                                    <i class="fa-solid fa-xmark mr-1"></i> ปิดเครื่องเล่น
+                                </button>
+                            </div>
                         </div>
 
                         <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-950 shadow-inner">
@@ -220,7 +225,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔗 บัญชี Firebase ของโปรเจกต์คุณ
         const firebaseConfig = {
             apiKey: "AIzaSyC9TWZbygXniEE2gE0SU08mFnaeCH2wlz8",
             authDomain: "my-shop-music.firebaseapp.com",
@@ -241,8 +245,8 @@
         
         let currentRole = 'customer';
         let currentTab = 'pending'; 
-        let selectedTableFilter = 'all'; // สำหรับดีเจ
-        let selectedCustomerTable = 'none'; // สำหรับลูกค้าใช้ดูคิวตัวเอง
+        let selectedTableFilter = 'all'; 
+        let selectedCustomerTable = 'none'; 
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
@@ -252,7 +256,6 @@
             const adminFilterSelect = document.getElementById('adminTableFilter');
             const customerFilterSelect = document.getElementById('customerTableFilter');
 
-            // วนลูปสร้างตัวเลือกโต๊ะ 1-30 ในจุดต่างๆ
             for (let i = 1; i <= 30; i++) {
                 let optCustomer = document.createElement('option');
                 optCustomer.value = i;
@@ -283,7 +286,6 @@
             });
         }
 
-        // ดึงข้อมูลแบบ Real-time
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -294,11 +296,10 @@
                 songQueue.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             syncCurrentlyPlayingTitle();
-            renderQueue();          // เรนเดอร์คิวฝั่งดีเจ
-            renderCustomerQueue();  // เรนเดอร์คิวประจำโต๊ะฝั่งลูกค้า
+            renderQueue();          
+            renderCustomerQueue();  
         });
 
-        // เมื่อลูกค้าเปลี่ยนโต๊ะที่ฟอร์มขอเพลง -> ซิงค์ไปตัวกรองดูคิวให้อัตโนมัติ
         window.handleCustomerTableChange = function() {
             const tableVal = document.getElementById('tableNo').value;
             if (tableVal) {
@@ -308,13 +309,11 @@
             }
         }
 
-        // เมื่อลูกค้าเลือกเปลี่ยนตัวกรองดูคิวเพลงเอง
         window.handleCustomerFilterChange = function() {
             selectedCustomerTable = document.getElementById('customerTableFilter').value;
             renderCustomerQueue();
         }
 
-        // ฟังก์ชันเรนเดอร์คิวเพลงประจำโต๊ะในหน้าของลูกค้า
         function renderCustomerQueue() {
             const container = document.getElementById('customerQueueList');
             if (selectedCustomerTable === 'none' || !selectedCustomerTable) {
@@ -327,7 +326,6 @@
                 return;
             }
 
-            // กรองเพลงทั้งหมดที่ผูกกับโต๊ะนี้
             const myTableSongs = songQueue.filter(item => String(item.table) === String(selectedCustomerTable));
 
             if (myTableSongs.length === 0) {
@@ -340,9 +338,7 @@
                 return;
             }
 
-            container.innerHTML = ''; // ล้างค่าเก่าออก
-
-            // หาคิวรอเล่นรวมทั้งหมด เพื่อเอาไว้คำนวณว่าเพลงที่รอนั้นเป็น "คิวรวมที่เท่าไหร่" ของร้าน
+            container.innerHTML = ''; 
             const allPendingSongs = songQueue.filter(item => item.status === 'pending');
 
             myTableSongs.forEach((item) => {
@@ -351,7 +347,6 @@
                 
                 let statusBadge = '';
                 if (item.status === 'pending') {
-                    // คำนวณหาลำดับคิวในระบบร้านขณะนั้น
                     const overallQueueNo = allPendingSongs.findIndex(s => s.id === item.id) + 1;
                     statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-2 py-0.5 rounded-full shrink-0 font-medium font-mono">⏳ รอเล่น (คิวร้าน #${overallQueueNo})</span>`;
                 } else if (item.status === 'playing') {
@@ -371,7 +366,6 @@
             });
         }
 
-        // ดีเจสลับเปลี่ยนตัวกรองโต๊ะ
         window.handleTableFilterChange = function() {
             selectedTableFilter = document.getElementById('adminTableFilter').value;
             renderQueue(); 
@@ -557,7 +551,6 @@
             renderQueue();
         }
 
-        // เรนเดอร์คิวฝั่งดีเจ
         function renderQueue() {
             const queueList = document.getElementById('queueList');
             const emptyState = document.getElementById('emptyState');
@@ -740,7 +733,7 @@
                 
                 const updates = {};
                 updates[`/songs/${songQueue[index].id}/order`] = nextOrder;
-                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
+                updates[`/songs/${songQueue[nextPendingIndex].id}/order`] = currentOrder;
                 update(ref(db), updates);
             }
         }
@@ -759,6 +752,18 @@
                 }
             } else {
                 window.closeVideoPlayer();
+            }
+        }
+
+        // ฟังก์ชันสำหรับกดข้ามเพลงเพื่อไปเล่นคิวถัดไปทันที (Skip)
+        window.skipToNextTrack = function() {
+            if (currentlyPlayingId) {
+                window.moveToStatus(currentlyPlayingId, 'completed');
+                setTimeout(() => {
+                    window.playNextTrack();
+                }, 800);
+            } else {
+                window.playNextTrack();
             }
         }
 
@@ -783,8 +788,6 @@
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-                
-                // อัปเดตตัวแปรระบุวิดีโอปัจจุบันเพื่อใช้จัดการสถานะเวลาเล่นจบ
                 player.queueId = queueId; 
                 return;
             }
@@ -800,7 +803,7 @@
                 events: { 
                     'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden'),
                     'onStateChange': function(event) {
-                        // event.data === 0 (YT.PlayerState.ENDED) คือสัญญาณว่าวิดีโอเล่นจบแล้ว
+                        // ดักจับสถานะวิดีโอเล่นจบ (YT.PlayerState.ENDED === 0)
                         if (event.data === 0) {
                             const currentId = player.queueId || queueId;
                             window.moveToStatus(currentId, 'completed');
