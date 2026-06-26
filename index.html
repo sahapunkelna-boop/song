@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบขอเพลงในร้าน - Customer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght=300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-rose-500 via-purple-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-compact-disc text-xl animate-spin" style="animation-duration: 4s;"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.5</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:py-8">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center gap-4 overflow-hidden relative shadow-inner mb-6">
+            <div class="flex items-center gap-2 shrink-0 bg-rose-500/10 text-rose-400 font-black text-xs px-3 py-1.5 rounded-xl border border-rose-500/20">
+                <i id="vinylIcon" class="fa-solid fa-compact-disc animate-spin text-base hidden"></i>
+                <span>กำลังเล่น:</span>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <p id="customerPlayingTitle" class="text-xs md:text-sm font-semibold text-slate-200 truncate">ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden group mb-6">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
+                    <h2 class="font-extrabold text-base text-white">ส่งคำขอเพลงของคุณที่นี่ <span class="text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md ml-1">จำกัดโต๊ะละ 3 เพลง</span></h2>
+                </div>
+                <span id="systemTimeBadge" class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium">กำลังโหลด...</span>
+            </div>
+
+            <form onsubmit="submitSong(event)" class="space-y-4">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1">
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">หมายเลขโต๊ะ</label>
+                        <select id="tableNo" onchange="handleCustomerTableChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs font-bold rounded-xl p-3 focus:outline-none cursor-pointer" required>
+                            <option value="" disabled selected>เลือกโต๊ะ</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">ชื่อเพลง, ศิลปิน หรือ ลิงก์ YouTube</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="songName" placeholder="เช่น ทรงอย่างแบด Paper Planes" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs rounded-xl p-3 focus:outline-none" required>
+                            <button type="button" id="searchBtn" onclick="searchSongList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 rounded-xl text-xs font-bold shrink-0 cursor-pointer"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="selectedVideoUrl" value="">
+                <div id="youtubeSongsList" class="hidden bg-slate-950 border border-slate-800 rounded-2xl max-h-60 overflow-y-auto divide-y divide-slate-900/60 shadow-inner"></div>
+                <div id="statusAlert" class="hidden"></div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบ
+                </button>
+            </form>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-2">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-list-ol text-slate-400 text-sm"></i>
+                    <h2 class="font-bold text-sm text-slate-300">ติดตามคิวเพลงของโต๊ะคุณ</h2>
+                </div>
+                <select id="customerTableFilter" onchange="handleCustomerFilterChange()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 cursor-pointer">
+                    <option value="none">เลือกโต๊ะเพื่อกรองดูคิว</option>
+                </select>
+            </div>
+            <div id="customerQueueList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9TWZbygXniEE2gE0SU08mFnaeCH2wlz8",
+            authDomain: "my-shop-music.firebaseapp.com",
+            databaseURL: "https://my-shop-music-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-shop-music",
+            storageBucket: "my-shop-music.firebasestorage.app",
+            messagingSenderId: "113291989652",
+            appId: "1:113291989652:web:cc529e1558f661e29f5a81"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const songsRef = ref(db, 'songs');
+        const systemSettingsRef = ref(db, 'system_settings');
+        const YT_API_KEY = 'AIzaSyComYbMyJPLjnQEErW_V7q4xpYZcNkIfdk';
+
+        let songQueue = [];
+        let cloudSystemSettings = { isActive: true, startTime: "17:00", endTime: "00:00" };
+        let selectedCustomerTable = 'none';
+
+        const tableSelect = document.getElementById('tableNo');
+        const customerFilterSelect = document.getElementById('customerTableFilter');
+
+        for (let i = 1; i <= 30; i++) {
+            let optCustomer = document.createElement('option');
+            optCustomer.value = i; optCustomer.innerHTML = `โต๊ะที่ ${i}`;
+            tableSelect.appendChild(optCustomer);
+
+            let optCustFilter = document.createElement('option');
+            optCustFilter.value = i; optCustFilter.innerHTML = `โต๊ะที่ ${i}`;
+            customerFilterSelect.appendChild(optCustFilter);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableParam = urlParams.get('table');
+        if(tableParam) {
+            tableSelect.value = tableParam;
+            customerFilterSelect.value = tableParam;
+            selectedCustomerTable = tableParam;
+        }
+
+        function checkSystemTime() {
+            const now = new Date();
+            const currentTimeStr = now.toTimeString().substring(0, 5);
+            const start = cloudSystemSettings.startTime;
+            const end = cloudSystemSettings.endTime;
+            let isTimeValid = (start <= end) ? (currentTimeStr >= start && currentTimeStr <= end) : (currentTimeStr >= start || currentTimeStr <= end);
+            const isSystemOpen = cloudSystemSettings.isActive && isTimeValid;
+
+            const submitBtn = document.getElementById('submitBtn');
+            const searchBtn = document.getElementById('searchBtn');
+            const timeBadge = document.getElementById('systemTimeBadge');
+
+            if (!cloudSystemSettings.isActive) {
+                timeBadge.className = "text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl font-medium";
+                timeBadge.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> ดีเจปิดระบบชั่วคราว`;
+            } else {
+                timeBadge.className = "text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium";
+                timeBadge.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> เวลาให้บริการ: ${start} - ${end} น.`;
+            }
+
+            if (!isSystemOpen) {
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full bg-slate-800 text-slate-500 font-bold text-sm py-3.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700/50";
+                submitBtn.innerHTML = !cloudSystemSettings.isActive ? `<i class="fa-solid fa-lock text-rose-500"></i> ดีเจปิดระบบรับเพลงชั่วคราว` : `<i class="fa-solid fa-lock text-amber-500"></i> ระบบปิดอยู่ (เปิด ${start} - ${end} น.)`;
+                if (searchBtn) searchBtn.disabled = true;
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer";
+                submitBtn.innerHTML = `<i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบ`;
+                if (searchBtn) searchBtn.disabled = false;
+            }
+        }
+
+        onValue(systemSettingsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cloudSystemSettings.isActive = data.isActive !== undefined ? data.isActive : true;
+                cloudSystemSettings.startTime = data.startTime || "17:00";
+                cloudSystemSettings.endTime = data.endTime || "00:00";
+            }
+            checkSystemTime();
+        });
+
+        onValue(songsRef, (snapshot) => {
+            const data = snapshot.val();
+            songQueue = [];
+            if (data) {
+                Object.keys(data).forEach(key => { songQueue.push({ id: key, ...data[key] }); });
+                songQueue.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
+            
+            const activeSong = songQueue.find(item => item.status === 'playing');
+            document.getElementById('customerPlayingTitle').innerText = activeSong ? activeSong.song : "ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง";
+            document.getElementById('vinylIcon').classList.toggle('hidden', !activeSong);
+            
+            renderCustomerQueue();
+            checkSystemTime();
+        });
+
+        window.handleCustomerTableChange = function() {
+            const tableVal = document.getElementById('tableNo').value;
+            if (tableVal) {
+                customerFilterSelect.value = tableVal;
+                selectedCustomerTable = tableVal;
+                renderCustomerQueue();
+            }
+        }
+
+        window.handleCustomerFilterChange = function() {
+            selectedCustomerTable = customerFilterSelect.value;
+            renderCustomerQueue();
+        }
+
+        function renderCustomerQueue() {
+            const container = document.getElementById('customerQueueList');
+            if (selectedCustomerTable === 'none' || !selectedCustomerTable) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">กรุณาเลือกหมายเลขโต๊ะของคุณด้านบน เพื่อตรวจสอบคิวเพลง</div>`;
+                return;
+            }
+            const myTableSongs = songQueue.filter(item => String(item.table) === String(selectedCustomerTable));
+            if (myTableSongs.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">โต๊ะที่ ${selectedCustomerTable} ยังไม่มีการขอเพลงในคืนนี้</div>`;
+                return;
+            }
+            container.innerHTML = '';
+            const allPendingSongs = songQueue.filter(item => item.status === 'pending');
+
+            myTableSongs.forEach((item) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "p-3 bg-slate-950 border border-slate-800/60 rounded-xl flex items-center justify-between gap-3 shadow-sm";
+                let statusBadge = '';
+                if (item.status === 'pending') {
+                    const overallQueueNo = allPendingSongs.findIndex(s => s.id === item.id) + 1;
+                    statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-2 py-0.5 rounded-full shrink-0 font-mono">⏳ รอเล่น (คิวร้าน #${overallQueueNo})</span>`;
+                } else if (item.status === 'playing') {
+                    statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] px-2 py-0.5 rounded-full shrink-0 font-bold animate-pulse">🔴 กำลังเล่น</span>`;
+                } else if (item.status === 'completed') {
+                    statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded-full shrink-0">✅ เล่นแล้ว</span>`;
+                }
+                itemDiv.innerHTML = `<div class="min-w-0 flex-1"><p class="text-xs md:text-sm font-medium text-slate-200 truncate">${item.song}</p></div>${statusBadge}`;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        window.searchSongList = function() {
+            const query = document.getElementById('songName').value.trim();
+            const songListContainer = document.getElementById('youtubeSongsList');
+            if (!query) return alert('กรุณาพิมพ์ชื่อเพลงก่อนครับ');
+
+            const ytId = extractYouTubeId(query);
+            if (ytId) {
+                document.getElementById('selectedVideoUrl').value = `https://www.youtube.com/watch?v=${ytId}`;
+                songListContainer.innerHTML = `<div class="p-4 text-center bg-emerald-950/40 text-emerald-400 rounded-xl text-sm">ตรวจพบลิงก์ตรงแล้ว กดส่งเพลงได้ทันที</div>`;
+                songListContainer.classList.remove('hidden');
+                return;
+            }
+
+            songListContainer.innerHTML = `<div class="p-4 text-center text-sm text-slate-500">กำลังค้นหา...</div>`;
+            songListContainer.classList.remove('hidden');
+
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(query)}&type=video&key=${YT_API_KEY}`)
+                .then(res => res.json())
+                .then(data => {
+                    songListContainer.innerHTML = '';
+                    if(!data.items || data.items.length === 0) return songListContainer.innerHTML = `<div class="p-4 text-center text-xs">ไม่พบข้อมูล</div>`;
+                    data.items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "p-3 flex items-center justify-between gap-3 hover:bg-slate-800/60 cursor-pointer";
+                        div.onclick = () => {
+                            document.getElementById('songName').value = item.snippet.title;
+                            document.getElementById('selectedVideoUrl').value = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                            songListContainer.classList.add('hidden');
+                        };
+                        div.innerHTML = `<div class="min-w-0 flex-1"><p class="text-xs font-semibold text-slate-200 truncate">${item.snippet.title}</p></div><button type="button" class="bg-slate-800 text-[11px] px-2 py-1 rounded">เลือก</button>`;
+                        songListContainer.appendChild(div);
+                    });
+                });
+        }
+
+        window.submitSong = function(event) {
+            event.preventDefault();
+            const tableNo = document.getElementById('tableNo').value;
+            let songName = document.getElementById('songName').value.trim();
+            let videoUrl = document.getElementById('selectedVideoUrl').value;
+
+            const activeSongsForTable = songQueue.filter(item => String(item.table) === String(tableNo) && (item.status === 'pending' || item.status === 'playing'));
+            if (activeSongsForTable.length >= 3) return alert('❌ ขอเพลงเกินโควตา (จำกัดโต๊ะละ 3 เพลงในคิวพร้อมกัน)');
+
+            const ytId = extractYouTubeId(songName);
+            if (ytId) { videoUrl = `https://www.youtube.com/watch?v=${ytId}`; songName = `ลิงก์ YouTube (${ytId})`; }
+            if (!videoUrl) videoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`;
+
+            const maxOrder = songQueue.reduce((max, item) => (item.order > max ? item.order : max), 0);
+            push(songsRef, { table: tableNo, song: songName, url: videoUrl, time: new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}), status: 'pending', order: maxOrder + 1 })
+            .then(() => {
+                const alertBox = document.getElementById('statusAlert');
+                alertBox.className = "block text-center p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                alertBox.innerHTML = `ส่งคำขอเพลงสำเร็จแล้ว!`;
+                document.getElementById('songName').value = ''; document.getElementById('selectedVideoUrl').value = '';
+                setTimeout(() => { alertBox.className = "hidden"; }, 3000);
+            });
+        }
+
+        function extractYouTubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null;
+        }
+        setInterval(checkSystemTime, 10000);
+    </script>
+</body>
+</html>
