@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
-                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v2.5</p>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.0</p>
                 </div>
             </div>
             
@@ -57,7 +57,9 @@
                         <i class="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
                         <h2 class="font-extrabold text-base text-white">ส่งคำขอเพลงของคุณที่นี่ <span class="text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md ml-1">จำกัดโต๊ะละ 3 เพลง</span></h2>
                     </div>
-                    <span class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium"><i class="fa-solid fa-clock mr-1"></i> เวลาให้บริการ 17:00 - 24:00 น.</span>
+                    <span id="systemTimeBadge" class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium">
+                        <i class="fa-solid fa-clock mr-1"></i> เวลาให้บริการ: กำลังโหลด...
+                    </span>
                 </div>
 
                 <form onsubmit="submitSong(event)" class="space-y-4 relative z-10">
@@ -104,6 +106,28 @@
         </div>
 
         <div id="adminView" class="hidden space-y-6 animate-fade-in">
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                <div class="flex items-center gap-2 text-amber-400 mb-4">
+                    <i class="fa-solid fa-sliders text-base"></i>
+                    <h2 class="font-black text-sm text-white">แผงควบคุมระบบการขอเพลงสำหรับดีเจ</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">เวลาเริ่มเปิดระบบรับเพลง</label>
+                        <input type="time" id="configStartTime" onchange="updateSystemSettingsOnCloud()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs font-bold rounded-xl p-2.5 focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">เวลาสิ้นสุดระบบรับเพลง</label>
+                        <input type="time" id="configEndTime" onchange="updateSystemSettingsOnCloud()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs font-bold rounded-xl p-2.5 focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">สวิตช์เปิด/ปิดระบบ (Manual Force)</label>
+                        <button id="configToggleBtn" onclick="toggleSystemActiveOnCloud()" class="w-full font-black text-xs py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"></button>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <div class="lg:col-span-2 space-y-4">
@@ -218,6 +242,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const songsRef = ref(db, 'songs');
+        const systemSettingsRef = ref(db, 'system_settings'); // โหนดคลาวด์ตัวใหม่สำหรับบันทึกการตั้งค่าระบบ
 
         const YT_API_KEY = 'AIzaSyComYbMyJPLjnQEErW_V7q4xpYZcNkIfdk'; 
         const DJ_PASSWORD = '1'; 
@@ -229,6 +254,13 @@
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
+
+        // ตัวแปรเก็บสถานะเปิด-ปิดระบบที่ดึงมาจาก Firebase (ดีเจคุมได้)
+        let cloudSystemSettings = {
+            isActive: true,
+            startTime: "17:00",
+            endTime: "00:00"
+        };
 
         const tableSelect = document.getElementById('tableNo');
         const adminFilterSelect = document.getElementById('adminTableFilter');
@@ -268,21 +300,53 @@
             });
         }
 
-        // 🕒 ฟังก์ชันเช็คเวลาเปิด-ปิดระบบขอเพลงของลูกค้า (17.00 - 24.00 น.)
+        // 🕒 ฟังก์ชันเช็คเวลารวมถึงเช็คสวิตช์หลักที่ควบคุมโดยดีเจ
         function checkSystemTime() {
-            const currentHour = new Date().getHours();
+            const now = new Date();
+            const currentTimeStr = now.toTimeString().substring(0, 5); // รูปแบบ "HH:MM"
+            
+            const start = cloudSystemSettings.startTime;
+            const end = cloudSystemSettings.endTime;
+            
+            let isTimeValid = false;
+            if (start <= end) {
+                isTimeValid = (currentTimeStr >= start && currentTimeStr <= end);
+            } else {
+                // รองรับข้ามวัน เช่น 17:00 ถึง 01:00 น. ของวันถัดไป
+                isTimeValid = (currentTimeStr >= start || currentTimeStr <= end);
+            }
+
+            // ระบบจะถือว่า "เปิด" ก็ต่อเมื่อ ดีเจเปิดสวิตช์ค้างไว้ (isActive) และ อยู่ในช่วงเวลาบริการ
+            const isSystemOpen = cloudSystemSettings.isActive && isTimeValid;
+
             const submitBtn = document.getElementById('submitBtn');
             const searchBtn = document.getElementById('searchBtn');
+            const timeBadge = document.getElementById('systemTimeBadge');
+
+            if (timeBadge) {
+                if (!cloudSystemSettings.isActive) {
+                    timeBadge.className = "text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl font-medium";
+                    timeBadge.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> ดีเจปิดระบบชั่วคราว`;
+                } else {
+                    timeBadge.className = "text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium";
+                    timeBadge.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> เวลาให้บริการ: ${start} - ${end} น.`;
+                }
+            }
             
-            if (currentHour < 17 && currentRole === 'customer') {
+            if (!isSystemOpen && currentRole === 'customer') {
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.className = "w-full bg-slate-800 text-slate-500 font-bold text-sm py-3.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700/50";
-                    submitBtn.innerHTML = `<i class="fa-solid fa-lock text-amber-500"></i> ระบบขอเพลงปิดอยู่ (เปิดให้บริการ 17.00 - 24.00 น.)`;
+                    
+                    if (!cloudSystemSettings.isActive) {
+                        submitBtn.innerHTML = `<i class="fa-solid fa-lock text-rose-500"></i> ขออภัย ดีเจปิดระบบรับเพลงชั่วคราว (Close by DJ)`;
+                    } else {
+                        submitBtn.innerHTML = `<i class="fa-solid fa-lock text-amber-500"></i> ระบบปิดอยู่ (เปิดให้บริการช่วงเวลา ${start} - ${end} น.)`;
+                    }
                 }
                 if (searchBtn) searchBtn.disabled = true;
             } else if (currentRole === 'customer') {
-                if (submitBtn && submitBtn.disabled) {
+                if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2";
                     submitBtn.innerHTML = `<i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบระบบคลาวด์`;
@@ -291,7 +355,50 @@
             }
         }
 
-        // ตรวจสอบข้อมูล Real-time จาก Firebase
+        // ดึงการตั้งค่าระบบเปิด-ปิดจากดีเจบน Firebase Real-time
+        onValue(systemSettingsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cloudSystemSettings.isActive = data.isActive !== undefined ? data.isActive : true;
+                cloudSystemSettings.startTime = data.startTime || "17:00";
+                cloudSystemSettings.endTime = data.endTime || "00:00";
+            } else {
+                // ถ้ายังไม่มีข้อมูลในระบบคลาวด์ ให้ค่าเริ่มต้นเป็น 17.00 - 24.00 น.
+                set(systemSettingsRef, cloudSystemSettings);
+            }
+            
+            // อัปเดตอินพุตฝั่งดีเจให้ตรงกับฐานข้อมูลคลาวด์
+            const startInput = document.getElementById('configStartTime');
+            const endInput = document.getElementById('configEndTime');
+            const toggleBtn = document.getElementById('configToggleBtn');
+            
+            if (startInput) startInput.value = cloudSystemSettings.startTime;
+            if (endInput) endInput.value = cloudSystemSettings.endTime;
+            if (toggleBtn) {
+                if (cloudSystemSettings.isActive) {
+                    toggleBtn.className = "w-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black text-xs py-2.5 px-4 rounded-xl shadow-md cursor-pointer text-center";
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> ระบบออนไลน์อยู่ (กดเพื่อสั่งปิด)`;
+                } else {
+                    toggleBtn.className = "w-full bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black text-xs py-2.5 px-4 rounded-xl shadow-md cursor-pointer text-center";
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ระบบออฟไลน์อยู่ (กดเพื่อสั่งเปิด)`;
+                }
+            }
+            checkSystemTime();
+        });
+
+        // ฟังก์ชันสั่งอัปเดตการตั้งค่าเวลาขึ้น Firebase (ดีเจเป็นคนสั่ง)
+        window.updateSystemSettingsOnCloud = function() {
+            const start = document.getElementById('configStartTime').value;
+            const end = document.getElementById('configEndTime').value;
+            update(systemSettingsRef, { startTime: start, endTime: end });
+        }
+
+        // ฟังก์ชันสั่งสลับสถานะเปิด-ปิดระบบสวิตช์ขึ้น Firebase (ดีเจเป็นคนกดคลิก)
+        window.toggleSystemActiveOnCloud = function() {
+            update(systemSettingsRef, { isActive: !cloudSystemSettings.isActive });
+        }
+
+        // ตรวจสอบข้อมูล Real-time คิวเพลงจาก Firebase
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -304,11 +411,11 @@
             syncCurrentlyPlayingTitle();
             renderQueue();          
             renderCustomerQueue();  
-            checkSystemTime(); // เช็คเวลาทุกครั้งที่ฐานข้อมูลขยับ
+            checkSystemTime(); 
         });
 
-        // คอยอัปเดตตรวจสอบเวลาระบบอัตโนมัติทุกๆ 30 วินาที เผื่อลูกค้าเปิดเว็บค้างไว้
-        setInterval(checkSystemTime, 30000);
+        // คอยรีเช็คเวลาทุก 10 วินาทีอัตโนมัติ
+        setInterval(checkSystemTime, 10000);
 
         window.handleCustomerTableChange = function() {
             const tableVal = document.getElementById('tableNo').value;
@@ -499,11 +606,15 @@
         window.submitSong = function(event) {
             event.preventDefault();
 
-            // 🛑 [ระบบตรวจสอบเวลาให้บริการ]: ดักพฤติกรรมกดส่งนอกช่วงเวลา 17.00 - 24.00 น.
+            // 🛑 [ระบบตรวจสอบความพร้อมของเซิร์ฟเวอร์]: ตรวจสอบเงื่อนไขเปิด-ปิดจริงก่อนเพิ่มลงฐานข้อมูล
             const now = new Date();
-            const currentHour = now.getHours();
-            if (currentHour < 17) {
-                alert("🔒 ขออภัยครับ ระบบขอเพลงดิจิทัลเปิดให้บริการเฉพาะเวลา 17.00 - 24.00 น. เท่านั้นครับ");
+            const currentTimeStr = now.toTimeString().substring(0, 5);
+            const start = cloudSystemSettings.startTime;
+            const end = cloudSystemSettings.endTime;
+            let isTimeValid = (start <= end) ? (currentTimeStr >= start && currentTimeStr <= end) : (currentTimeStr >= start || currentTimeStr <= end);
+
+            if (!cloudSystemSettings.isActive || !isTimeValid) {
+                alert("🔒 ขออภัยครับ ขณะนี้ระบบขอเพลงปิดบริการอยู่ ไม่สามารถบันทึกคิวเพลงได้ครับ");
                 return;
             }
 
@@ -518,7 +629,6 @@
                 (item.status === 'pending' || item.status === 'playing')
             );
 
-            // ⚠️ บล็อกหากมีคิวเพลงค้างรวมกันตั้งแต่ 3 เพลงขึ้นไป
             if (activeSongsForTable.length >= 3) {
                 alert(`❌ โต๊ะที่ ${tableNo} ขอเพลงเกินโควตาแล้วครับ (จำกัดโต๊ะละ 3 เพลงในคิวพร้อมกัน) กรุณารอให้ดีเจเปิดเพลงของคุณก่อนนะครับ`);
                 return;
@@ -776,7 +886,7 @@
                 
                 const updates = {};
                 updates[`/songs/${songQueue[index].id}/order`] = nextOrder;
-                updates[`/songs/${songQueue[nextPendingIndex].id}/order`] = currentOrder;
+                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
                 update(ref(db), updates);
             }
         }
@@ -945,7 +1055,7 @@
             }
             syncCurrentlyPlayingTitle();
             renderCustomerQueue();
-            checkSystemTime(); // เช็คเวลาใหม่เมื่อกลับมาหน้าลูกค้า
+            checkSystemTime(); 
         }
 
         window.removeQueuePermanently = function(id, isCurrentlyPlaying = false) {
