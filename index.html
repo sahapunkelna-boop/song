@@ -15,7 +15,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #10b981; }
     </style>
 </head>
-<body class=\"bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white\">
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white">
 
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
-                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v2.0</p>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v2.5</p>
                 </div>
             </div>
             
@@ -52,9 +52,12 @@
                 <div class="absolute -right-16 -top-16 w-36 h-36 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all duration-700"></div>
                 <div class="absolute -left-16 -bottom-16 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700"></div>
 
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
-                    <h2 class="font-extrabold text-base text-white">ส่งคำขอเพลงของคุณที่นี่</h2>
+                <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
+                        <h2 class="font-extrabold text-base text-white">ส่งคำขอเพลงของคุณที่นี่ <span class="text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md ml-1">จำกัดโต๊ะละ 3 เพลง</span></h2>
+                    </div>
+                    <span class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl font-medium"><i class="fa-solid fa-clock mr-1"></i> เวลาให้บริการ 17:00 - 24:00 น.</span>
                 </div>
 
                 <form onsubmit="submitSong(event)" class="space-y-4 relative z-10">
@@ -69,7 +72,7 @@
                             <label class="block text-[11px] font-bold text-slate-400 mb-1">ชื่อเพลง, ศิลปิน หรือ ลิงก์ YouTube</label>
                             <div class="flex gap-2">
                                 <input type="text" id="songName" placeholder="เช่น ทรงอย่างแบด Paper Planes" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs rounded-xl p-3 focus:outline-none transition-colors shadow-sm" required>
-                                <button type="button" onclick="searchSongList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
+                                <button type="button" id="searchBtn" onclick="searchSongList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
                             </div>
                         </div>
                     </div>
@@ -80,7 +83,7 @@
 
                     <div id="statusAlert" class="hidden"></div>
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2">
+                    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2">
                         <i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบระบบคลาวด์
                     </button>
                 </form>
@@ -96,8 +99,7 @@
                         <option value="none">เลือกโต๊ะเพื่อกรองดูคิว</option>
                     </select>
                 </div>
-                <div id="customerQueueList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                    </div>
+                <div id="customerQueueList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
             </div>
         </div>
 
@@ -202,7 +204,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔗 บัญชี Firebase ของโปรเจกต์คุณ
         const firebaseConfig = {
             apiKey: "AIzaSyC9TWZbygXniEE2gE0SU08mFnaeCH2wlz8",
             authDomain: "my-shop-music.firebaseapp.com",
@@ -229,7 +230,6 @@
         let player = null; 
         let currentlyPlayingId = null; 
 
-        // สร้างตัวเลือกโต๊ะ 1-30 โดยไม่ใช้ window.onload ในสคริปต์ Module
         const tableSelect = document.getElementById('tableNo');
         const adminFilterSelect = document.getElementById('adminTableFilter');
         const customerFilterSelect = document.getElementById('customerTableFilter');
@@ -261,7 +261,6 @@
             selectedCustomerTable = tableParam;
         }
 
-        // ดักจับปุ่ม Enter ของรหัสผ่านดีเจ
         const passwordInput = document.getElementById('djPasswordInput');
         if (passwordInput) {
             passwordInput.addEventListener('keypress', function(e) {
@@ -269,7 +268,30 @@
             });
         }
 
-        // ดึงข้อมูลแบบ Real-time
+        // 🕒 ฟังก์ชันเช็คเวลาเปิด-ปิดระบบขอเพลงของลูกค้า (17.00 - 24.00 น.)
+        function checkSystemTime() {
+            const currentHour = new Date().getHours();
+            const submitBtn = document.getElementById('submitBtn');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            if (currentHour < 17 && currentRole === 'customer') {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.className = "w-full bg-slate-800 text-slate-500 font-bold text-sm py-3.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700/50";
+                    submitBtn.innerHTML = `<i class="fa-solid fa-lock text-amber-500"></i> ระบบขอเพลงปิดอยู่ (เปิดให้บริการ 17.00 - 24.00 น.)`;
+                }
+                if (searchBtn) searchBtn.disabled = true;
+            } else if (currentRole === 'customer') {
+                if (submitBtn && submitBtn.disabled) {
+                    submitBtn.disabled = false;
+                    submitBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2";
+                    submitBtn.innerHTML = `<i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบระบบคลาวด์`;
+                }
+                if (searchBtn) searchBtn.disabled = false;
+            }
+        }
+
+        // ตรวจสอบข้อมูล Real-time จาก Firebase
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -282,7 +304,11 @@
             syncCurrentlyPlayingTitle();
             renderQueue();          
             renderCustomerQueue();  
+            checkSystemTime(); // เช็คเวลาทุกครั้งที่ฐานข้อมูลขยับ
         });
+
+        // คอยอัปเดตตรวจสอบเวลาระบบอัตโนมัติทุกๆ 30 วินาที เผื่อลูกค้าเปิดเว็บค้างไว้
+        setInterval(checkSystemTime, 30000);
 
         window.handleCustomerTableChange = function() {
             const tableVal = document.getElementById('tableNo').value;
@@ -472,10 +498,31 @@
 
         window.submitSong = function(event) {
             event.preventDefault();
+
+            // 🛑 [ระบบตรวจสอบเวลาให้บริการ]: ดักพฤติกรรมกดส่งนอกช่วงเวลา 17.00 - 24.00 น.
+            const now = new Date();
+            const currentHour = now.getHours();
+            if (currentHour < 17) {
+                alert("🔒 ขออภัยครับ ระบบขอเพลงดิจิทัลเปิดให้บริการเฉพาะเวลา 17.00 - 24.00 น. เท่านั้นครับ");
+                return;
+            }
+
             const tableNo = document.getElementById('tableNo').value;
             let songName = document.getElementById('songName').value.trim();
             let videoUrl = document.getElementById('selectedVideoUrl').value;
-            const timestamp = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            const timestamp = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+            // 🛑 [ระบบตรวจสอบโควตา]: นับเพลงสถานะ pending/playing ของโต๊ะนั้น ๆ
+            const activeSongsForTable = songQueue.filter(item => 
+                String(item.table) === String(tableNo) && 
+                (item.status === 'pending' || item.status === 'playing')
+            );
+
+            // ⚠️ บล็อกหากมีคิวเพลงค้างรวมกันตั้งแต่ 3 เพลงขึ้นไป
+            if (activeSongsForTable.length >= 3) {
+                alert(`❌ โต๊ะที่ ${tableNo} ขอเพลงเกินโควตาแล้วครับ (จำกัดโต๊ะละ 3 เพลงในคิวพร้อมกัน) กรุณารอให้ดีเจเปิดเพลงของคุณก่อนนะครับ`);
+                return;
+            }
 
             const ytId = extractYouTubeId(songName);
             if (ytId) {
@@ -734,9 +781,7 @@
             }
         }
 
-        // 🌟 [ฟังก์ชันหลักสำหรับการสตรีมต่อเนื่องอัตโนมัติ]
         function playNextSong() {
-            // ค้นหาคิวเพลงถัดไปที่มีสถานะเป็น pending ตัวแรกสุดตามที่เรียงลำดับ (order) ไว้
             const nextSong = songQueue.find(item => item.status === 'pending');
             
             if (nextSong) {
@@ -747,7 +792,6 @@
                     window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
                 }
             } else {
-                // หากคิวเพลงในร้านหมดแล้ว ให้ทำการเคลียร์หน้าจอเครื่องเล่น
                 currentlyPlayingId = null;
                 syncCurrentlyPlayingTitle();
                 const targetWrapper = document.getElementById('youtubePlayer');
@@ -787,7 +831,6 @@
             const targetWrapper = document.getElementById('youtubePlayer');
             if (!targetWrapper) return;
 
-            // ถ้ามีอิลิเมนต์เครื่องเล่นเดิมอยู่แล้ว ให้เปลี่ยนวิดีโอทันที
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 const fallbackLink = document.getElementById('fallbackExternalLink');
@@ -800,7 +843,6 @@
             newPlayerDiv.id = 'youtubePlayerObject';
             targetWrapper.appendChild(newPlayerDiv);
 
-            // สร้าง Object เครื่องเล่นวิดีโอ พร้อมเชื่อมระบบตรวจจับเมื่อเพลงเล่นจบ (Autoplay)
             player = new YT.Player('youtubePlayerObject', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'autoplay': 1, 'playsinline': 1 },
@@ -809,14 +851,11 @@
                         const fAlert = document.getElementById('playerFallbackAlert');
                         if (fAlert) fAlert.classList.remove('hidden');
                     },
-                    // 🎯 จุดรวมระบบ Autoplay เมื่อตรวจพบสถานะวิดีโอเป็น ENDED (จบเพลง)
                     'onStateChange': (event) => {
                         if (event.data === YT.PlayerState.ENDED) {
-                            // สั่งเปลี่ยนสถานะเพลงปัจจุบันเป็นเสร็จสิ้น (completed) บน Firebase
                             if (queueId) {
                                 window.moveToStatus(queueId, 'completed');
                             }
-                            // หน่วงเวลาเซ็ตระบบฐานข้อมูล 1 วินาที จากนั้นเรียกคิวถัดไปขึ้นมาสตรีม
                             setTimeout(() => {
                                 playNextSong();
                             }, 1000);
@@ -906,6 +945,7 @@
             }
             syncCurrentlyPlayingTitle();
             renderCustomerQueue();
+            checkSystemTime(); // เช็คเวลาใหม่เมื่อกลับมาหน้าลูกค้า
         }
 
         window.removeQueuePermanently = function(id, isCurrentlyPlaying = false) {
