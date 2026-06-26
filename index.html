@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Request System - Cloud Real-time</title>
+    <!-- Tailwind CSS (V4) & FontAwesome -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -17,6 +18,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white">
 
+    <!-- Header Navigation -->
     <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-lg p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center max-w-7xl">
             <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center tracking-wide">
@@ -29,10 +31,13 @@
         </div>
     </header>
 
+    <!-- Main Content Container -->
     <main class="container mx-auto px-4 py-6 max-w-7xl">
         
+        <!-- ================= CUSTOMER VIEW (หน้าจอฝั่งลูกค้า) ================= -->
         <section id="customerView" class="block space-y-6 max-w-4xl mx-auto py-4">
             
+            <!-- ป้ายแสดงชื่อเพลงที่กำลังเล่นอยู่ สำหรับให้ลูกค้าเห็น -->
             <div class="bg-slate-900 border border-rose-500/30 p-4 rounded-2xl shadow-xl flex items-center gap-4 relative overflow-hidden">
                 <div class="absolute top-0 left-0 h-full w-1 bg-rose-500"></div>
                 <div class="flex h-3 w-3 relative shrink-0">
@@ -48,6 +53,7 @@
                 </div>
             </div>
 
+            <!-- ฟอร์มส่งคำขอเพลง -->
             <div class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-2xl relative">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-t-2xl"></div>
                 <h2 class="text-xl font-semibold mb-6 text-center text-slate-200 flex items-center justify-center gap-2">
@@ -72,6 +78,7 @@
                             </button>
                         </div>
                         
+                        <!-- Dropdown Suggestions -->
                         <div id="youtubeSongsList" class="hidden mt-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden max-h-80 overflow-y-auto divide-y divide-slate-800/80 shadow-2xl absolute w-full z-50"></div>
                     </div>
 
@@ -85,11 +92,13 @@
             
             <div id="statusAlert" class="hidden text-center p-4 rounded-xl font-medium transition-all duration-300"></div>
 
+            <!-- ================= NEW: SECTION ตรวจสอบคิวเพลงประจำโต๊ะสำหรับลูกค้า ================= -->
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                     <h3 class="text-base font-semibold text-slate-200 flex items-center gap-2">
                         <i class="fa-solid fa-list-ol text-amber-400"></i> คิวเพลงของโต๊ะคุณ
                     </h3>
+                    <!-- Dropdown ให้กดเลือกดูรายโต๊ะในหน้าลูกค้า -->
                     <div class="flex items-center gap-2 shrink-0">
                         <span class="text-xs text-slate-400">เลือกดูโต๊ะ:</span>
                         <select id="customerTableFilter" onchange="handleCustomerFilterChange()" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl p-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer min-w-[120px]">
@@ -98,6 +107,7 @@
                     </div>
                 </div>
 
+                <!-- รายการคิวเพลงประจำโต๊ะที่เลือก จะมาแสดงตรงนี้ -->
                 <div id="customerQueueList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                     <div class="text-center py-10 text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
                         <i class="fa-solid fa-chair text-3xl text-slate-800"></i>
@@ -108,9 +118,11 @@
 
         </section>
 
+        <!-- ================= ADMIN / DJ VIEW (หน้าจอฝั่งดีเจ) ================= -->
         <section id="adminView" class="hidden">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
+                <!-- [ฝั่งซ้าย - 7 ส่วน] เครื่องเล่นวิดีโอหลัก ดีเจ -->
                 <div class="lg:col-span-7 space-y-4 lg:sticky lg:top-24">
                     <div id="videoPlayerContainer" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-2xl space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -121,16 +133,12 @@
                                 </span>
                                 <span class="truncate">กำลังเล่นอยู่: <span id="playingTitle" class="text-slate-200 font-normal">ยังไม่ได้เลือกเพลง</span></span>
                             </span>
-                            <div class="flex gap-2 shrink-0 ml-2">
-                                <button onclick="window.skipToNextTrack()" class="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold py-1.5 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-1">
-                                    <i class="fa-solid fa-forward"></i> เล่นคิวต่อไป
-                                </button>
-                                <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-1.5 px-3 rounded-lg transition-all cursor-pointer">
-                                    <i class="fa-solid fa-xmark mr-1"></i> ปิดเครื่องเล่น
-                                </button>
-                            </div>
+                            <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-1.5 px-3 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
+                                <i class="fa-solid fa-xmark mr-1"></i> ปิดเครื่องเล่น
+                            </button>
                         </div>
 
+                        <!-- กรอบฝัง API Player -->
                         <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-950 shadow-inner">
                             <div id="youtubePlayer" class="w-full h-full flex items-center justify-center text-slate-600 text-sm">
                                 <div class="text-center p-4">
@@ -140,6 +148,7 @@
                             </div>
                         </div>
 
+                        <!-- กล่องข้อความแจ้งเตือนกรณีเจอ Error -->
                         <div id="playerFallbackAlert" class="hidden p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div class="text-xs text-rose-400">
                                 <i class="fa-solid fa-triangle-exclamation mr-1.5 text-rose-500"></i>
@@ -152,6 +161,7 @@
                     </div>
                 </div>
 
+                <!-- [ฝั่งขวา - 5 ส่วน] แท็บบริหารจัดการคิวเพลง -->
                 <div class="lg:col-span-5 space-y-4">
                     <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-md space-y-3">
                         <div class="flex justify-between items-center px-1">
@@ -161,6 +171,7 @@
                             </button>
                         </div>
                         
+                        <!-- ช่องเลือกกรองตามรายโต๊ะ (Filter by Table) สำหรับดีเจ -->
                         <div class="px-1">
                             <label class="block text-[11px] text-slate-400 mb-1 font-medium"><i class="fa-solid fa-filter text-amber-400 mr-1"></i> กรองดูคิวตามหมายเลขโต๊ะ:</label>
                             <select id="adminTableFilter" onchange="handleTableFilterChange()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
@@ -168,6 +179,7 @@
                             </select>
                         </div>
 
+                        <!-- Navigation Tabs (ยังไม่ได้เล่น | กำลังเล่น | เล่นเสร็จแล้ว) -->
                         <div class="grid grid-cols-3 bg-slate-950 p-1 rounded-xl border border-slate-800">
                             <button onclick="switchQueueTab('pending')" id="tabBtn-pending" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-amber-400 bg-slate-900 border border-slate-800">
                                 <span>ยังไม่ได้เล่น</span>
@@ -184,6 +196,7 @@
                         </div>
                     </div>
 
+                    <!-- รายการคิวเพลงสำหรับดีเจ -->
                     <div id="queueList" class="space-y-3 max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-1">
                         <div id="emptyState" class="text-center py-16 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center">
                             <i class="fa-solid fa-compact-disc text-4xl text-slate-700 animate-spin mb-3" style="animation-duration: 4s;"></i>
@@ -197,6 +210,7 @@
 
     </main>
 
+    <!-- ================= PASSWORD MODAL WINDOW ================= -->
     <div id="passwordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative space-y-4">
             <div class="text-center">
@@ -220,11 +234,13 @@
         </div>
     </div>
 
+    <!-- โหลดสคริปต์เดย์พอนเดนซี่หลัก (YouTube & Firebase SDK) -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // 🔗 บัญชี Firebase ของโปรเจกต์คุณ
         const firebaseConfig = {
             apiKey: "AIzaSyC9TWZbygXniEE2gE0SU08mFnaeCH2wlz8",
             authDomain: "my-shop-music.firebaseapp.com",
@@ -245,8 +261,8 @@
         
         let currentRole = 'customer';
         let currentTab = 'pending'; 
-        let selectedTableFilter = 'all'; 
-        let selectedCustomerTable = 'none'; 
+        let selectedTableFilter = 'all'; // สำหรับดีเจ
+        let selectedCustomerTable = 'none'; // สำหรับลูกค้าใช้ดูคิวตัวเอง
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
@@ -256,6 +272,7 @@
             const adminFilterSelect = document.getElementById('adminTableFilter');
             const customerFilterSelect = document.getElementById('customerTableFilter');
 
+            // วนลูปสร้างตัวเลือกโต๊ะ 1-30 ในจุดต่างๆ
             for (let i = 1; i <= 30; i++) {
                 let optCustomer = document.createElement('option');
                 optCustomer.value = i;
@@ -282,10 +299,11 @@
             }
 
             document.getElementById('djPasswordInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') window.verifyDjPassword();
+                if (e.key === 'Enter') verifyDjPassword();
             });
         }
 
+        // ดึงข้อมูลแบบ Real-time
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -296,10 +314,11 @@
                 songQueue.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             syncCurrentlyPlayingTitle();
-            renderQueue();          
-            renderCustomerQueue();  
+            renderQueue();          // เรนเดอร์คิวฝั่งดีเจ
+            renderCustomerQueue();  // เรนเดอร์คิวประจำโต๊ะฝั่งลูกค้า
         });
 
+        // เมื่อลูกค้าเปลี่ยนโต๊ะที่ฟอร์มขอเพลง -> ซิงค์ไปตัวกรองดูคิวให้อัตโนมัติ
         window.handleCustomerTableChange = function() {
             const tableVal = document.getElementById('tableNo').value;
             if (tableVal) {
@@ -309,11 +328,13 @@
             }
         }
 
+        // เมื่อลูกค้าเลือกเปลี่ยนตัวกรองดูคิวเพลงเอง
         window.handleCustomerFilterChange = function() {
             selectedCustomerTable = document.getElementById('customerTableFilter').value;
             renderCustomerQueue();
         }
 
+        // ฟังก์ชันเรนเดอร์คิวเพลงประจำโต๊ะในหน้าของลูกค้า
         function renderCustomerQueue() {
             const container = document.getElementById('customerQueueList');
             if (selectedCustomerTable === 'none' || !selectedCustomerTable) {
@@ -326,6 +347,7 @@
                 return;
             }
 
+            // กรองเพลงทั้งหมดที่ผูกกับโต๊ะนี้
             const myTableSongs = songQueue.filter(item => String(item.table) === String(selectedCustomerTable));
 
             if (myTableSongs.length === 0) {
@@ -338,7 +360,9 @@
                 return;
             }
 
-            container.innerHTML = ''; 
+            container.innerHTML = ''; // ล้างค่าเก่าออก
+
+            // หาคิวรอเล่นรวมทั้งหมด เพื่อเอาไว้คำนวณว่าเพลงที่รอนั้นเป็น "คิวรวมที่เท่าไหร่" ของร้าน
             const allPendingSongs = songQueue.filter(item => item.status === 'pending');
 
             myTableSongs.forEach((item) => {
@@ -347,6 +371,7 @@
                 
                 let statusBadge = '';
                 if (item.status === 'pending') {
+                    // คำนวณหาลำดับคิวในระบบร้านขณะนั้น
                     const overallQueueNo = allPendingSongs.findIndex(s => s.id === item.id) + 1;
                     statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-2 py-0.5 rounded-full shrink-0 font-medium font-mono">⏳ รอเล่น (คิวร้าน #${overallQueueNo})</span>`;
                 } else if (item.status === 'playing') {
@@ -366,6 +391,7 @@
             });
         }
 
+        // ดีเจสลับเปลี่ยนตัวกรองโต๊ะ
         window.handleTableFilterChange = function() {
             selectedTableFilter = document.getElementById('adminTableFilter').value;
             renderQueue(); 
@@ -479,6 +505,12 @@
             return result;
         }
 
+        function selectThisSong(title, url) {
+            document.getElementById('songName').value = title;
+            document.getElementById('selectedVideoUrl').value = url; 
+            document.getElementById('youtubeSongsList').classList.add('hidden');
+        }
+
         window.submitSong = function(event) {
             event.preventDefault();
             const tableNo = document.getElementById('tableNo').value;
@@ -551,6 +583,7 @@
             renderQueue();
         }
 
+        // เรนเดอร์คิวฝั่งดีเจ
         function renderQueue() {
             const queueList = document.getElementById('queueList');
             const emptyState = document.getElementById('emptyState');
@@ -600,7 +633,7 @@
                 
                 const safeSongTitle = item.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 const ytId = extractYouTubeId(item.url);
-                const playCall = ytId ? `window.initAndPlayPlayer('${ytId}', '${safeSongTitle}', '${item.id}')` : `alert('กรุณาเปิดลิงก์ภายนอก')`;
+                const playCall = ytId ? `initAndPlayPlayer('${ytId}', '${safeSongTitle}', '${item.id}')` : `alert('กรุณาเปิดลิงก์ภายนอก')`;
 
                 const thumbnailHtml = ytId 
                     ? `<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" class="w-16 h-10 object-cover rounded bg-slate-800 border border-slate-700/50 shrink-0" alt="Cover">`
@@ -618,8 +651,8 @@
 
                 const reorderButtonsHtml = (currentTab === 'pending' && selectedTableFilter === 'all') ? `
                     <div class="flex flex-col gap-1 shrink-0 bg-slate-950/60 p-1 rounded-md border border-slate-800/80">
-                        <button onclick="window.moveQueueUp(${trueIndex})" class="text-[10px] bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-400 px-1.5 py-1 rounded cursor-pointer"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button onclick="window.moveQueueDown(${trueIndex})" class="text-[10px] bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-400 px-1.5 py-1 rounded cursor-pointer"><i class="fa-solid fa-arrow-down"></i></button>
+                        <button onclick="moveQueueUp(${trueIndex})" class="text-[10px] bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-400 px-1.5 py-1 rounded cursor-pointer"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button onclick="moveQueueDown(${trueIndex})" class="text-[10px] bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-400 px-1.5 py-1 rounded cursor-pointer"><i class="fa-solid fa-arrow-down"></i></button>
                     </div>
                 ` : '';
 
@@ -629,10 +662,10 @@
                         <button onclick="${playCall}" class="flex-1 text-center bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
                             <i class="fa-brands fa-youtube"></i> เล่นในเว็บ
                         </button>
-                        <button onclick="window.moveToStatus('${item.id}', 'completed')" class="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 py-1.5 px-3 rounded-lg text-[11px] transition-all cursor-pointer">
+                        <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 py-1.5 px-3 rounded-lg text-[11px] transition-all cursor-pointer">
                             <i class="fa-solid fa-check mr-1"></i> เสร็จสิ้น
                         </button>
-                        <button onclick="window.removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
+                        <button onclick="removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     `;
@@ -641,19 +674,19 @@
                         <div class="flex-1 text-xs text-rose-400 flex items-center gap-1.5 font-medium px-1">
                             <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> กำลังออนแอร์...
                         </div>
-                        <button onclick="window.moveToStatus('${item.id}', 'completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-4 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1">
+                        <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-4 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-circle-check"></i> จบเพลงนี้
                         </button>
-                        <button onclick="window.removeQueuePermanently('${item.id}', true)" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
+                        <button onclick="removeQueuePermanently('${item.id}', true)" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     `;
                 } else if (currentTab === 'completed') {
                     actionButtonsHtml = `
-                        <button onclick="window.moveToStatus('${item.id}', 'pending')" class="flex-1 text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
+                        <button onclick="moveToStatus('${item.id}', 'pending')" class="flex-1 text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
                             <i class="fa-solid fa-rotate-left text-amber-400"></i> ดึงกลับคิวรอใหม่
                         </button>
-                        <button onclick="window.removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                     `;
                 }
 
@@ -675,7 +708,7 @@
                     <div class="flex gap-1.5 w-full pt-2 border-t border-slate-800/80 items-center">
                         ${actionButtonsHtml}
                         <a href="${item.url}" target="_blank" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs"><i class="fa-solid fa-arrow-up-right-from-square text-amber-400"></i></a>
-                        <button onclick="window.copyToClipboard('${item.url}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs"><i class="fa-solid fa-copy"></i></button>
+                        <button onclick="copyToClipboard('${item.url}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs"><i class="fa-solid fa-copy"></i></button>
                     </div>
                 `;
                 queueList.appendChild(itemDiv);
@@ -738,35 +771,6 @@
             }
         }
 
-        // ฟังก์ชันสำหรับค้นหาคิวถัดไปและเล่นต่ออัตโนมัติ
-        window.playNextTrack = function() {
-            const nextSong = songQueue.find(item => item.status === 'pending');
-            if (nextSong) {
-                const ytId = extractYouTubeId(nextSong.url);
-                if (ytId) {
-                    const safeSongTitle = nextSong.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                    window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
-                } else {
-                    window.moveToStatus(nextSong.id, 'completed');
-                    window.playNextTrack();
-                }
-            } else {
-                window.closeVideoPlayer();
-            }
-        }
-
-        // ฟังก์ชันสำหรับกดข้ามเพลงเพื่อไปเล่นคิวถัดไปทันที (Skip)
-        window.skipToNextTrack = function() {
-            if (currentlyPlayingId) {
-                window.moveToStatus(currentlyPlayingId, 'completed');
-                setTimeout(() => {
-                    window.playNextTrack();
-                }, 800);
-            } else {
-                window.playNextTrack();
-            }
-        }
-
         window.initAndPlayPlayer = function(videoId, songTitle, queueId) {
             const updates = {};
             updates[`/songs/${queueId}/status`] = 'playing';
@@ -788,7 +792,6 @@
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
-                player.queueId = queueId; 
                 return;
             }
 
@@ -800,21 +803,8 @@
             player = new YT.Player('youtubePlayerObject', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'autoplay': 1, 'playsinline': 1 },
-                events: { 
-                    'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden'),
-                    'onStateChange': function(event) {
-                        // ดักจับสถานะวิดีโอเล่นจบ (YT.PlayerState.ENDED === 0)
-                        if (event.data === 0) {
-                            const currentId = player.queueId || queueId;
-                            window.moveToStatus(currentId, 'completed');
-                            setTimeout(() => {
-                                window.playNextTrack();
-                            }, 1000);
-                        }
-                    }
-                }
+                events: { 'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden') }
             });
-            player.queueId = queueId;
 
             document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
         }
@@ -906,7 +896,7 @@
         window.clearAllQueue = function() {
             if(confirm('ต้องการล้างคิวเพลงทั้งหมดออกจากฐานข้อมูล?')) {
                 set(songsRef, null).then(() => {
-                    window.closeVideoPlayer();
+                    closeVideoPlayer();
                 });
             }
         }
