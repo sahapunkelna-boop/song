@@ -20,12 +20,12 @@
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-tr from-rose-500 via-purple-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-spin-slow">
-                    <i class="fa-solid fa-compact-disc text-xl"></i>
+                <div class="w-10 h-10 bg-gradient-to-tr from-rose-500 via-purple-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-compact-disc text-xl animate-spin" style="animation-duration: 4s;"></i>
                 </div>
                 <div>
                     <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
-                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.0</p>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.5</p>
                 </div>
             </div>
             
@@ -135,18 +135,18 @@
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                             <div class="flex items-center gap-2 min-w-0">
                                 <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
-                                <h2 class="font-black text-sm text-white truncate">เครื่องเล่นสตรีมมิ่ง: <span id="playingTitle" class="text-slate-400 font-medium">ยังไม่ได้เลือกเพลง</span></h2>
+                                <h2 class="font-black text-sm text-white truncate">เครื่องเล่นอัตโนมัติ: <span id="playingTitle" class="text-slate-400 font-medium">ยังไม่ได้เลือกเพลง</span></h2>
                             </div>
                             <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-rose-600 hover:text-white border border-slate-700 px-3 py-1 rounded-xl transition-all cursor-pointer shadow-sm">
                                 <i class="fa-solid fa-power-off mr-1"></i> ปิดเครื่องเล่น
                             </button>
                         </div>
                         
-                        <div id="videoPlayerContainer" class="hidden w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-black relative shadow-inner">
+                        <div id="videoPlayerContainer" class="w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-black relative shadow-inner">
                             <div id="youtubePlayer" class="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                                 <div class="text-center p-4">
                                     <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                                    <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                                    <p id="playerStatusText">เปิดทิ้งไว้ตรงนี้... ระบบจะเล่นคิวเพลงแรกและคิวถัดไปให้คุณแบบอัตโนมัติ 🎧</p>
                                 </div>
                             </div>
                         </div>
@@ -155,7 +155,7 @@
                             <div class="flex items-center gap-2 font-semibold">
                                 <i class="fa-solid fa-triangle-exclamation"></i> เพลงนี้ไม่อนุญาตให้เล่นแบบฝังในเว็บ (Embed Blocked By Owner)
                             </div>
-                            <p class="font-light">เจ้าของคลิปจำกัดสิทธิ์การเล่น แนะนำให้กดปุ่มเปิดฟังในแท็บภายนอกแทนครับ</p>
+                            <p class="font-light">แนะนำให้ดีเจกดเปิดผ่านแท็บภายนอกแทน และกดปุ่ม "จบเพลงนี้" เมื่อเล่นจบเพื่อเปิดคิวต่อไปครับ</p>
                             <a id="fallbackExternalLink" href="#" target="_blank" class="w-max bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition-all mt-1 flex items-center gap-1">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่ภายนอกเว็บ
                             </a>
@@ -242,7 +242,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const songsRef = ref(db, 'songs');
-        const systemSettingsRef = ref(db, 'system_settings'); // โหนดคลาวด์ตัวใหม่สำหรับบันทึกการตั้งค่าระบบ
+        const systemSettingsRef = ref(db, 'system_settings');
 
         const YT_API_KEY = 'AIzaSyComYbMyJPLjnQEErW_V7q4xpYZcNkIfdk'; 
         const DJ_PASSWORD = '1'; 
@@ -254,8 +254,8 @@
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
+        let isPlayerReady = false; // ตรวจสอบสถานะการเชื่อมต่อ YouTube iframe
 
-        // ตัวแปรเก็บสถานะเปิด-ปิดระบบที่ดึงมาจาก Firebase (ดีเจคุมได้)
         let cloudSystemSettings = {
             isActive: true,
             startTime: "17:00",
@@ -300,10 +300,9 @@
             });
         }
 
-        // 🕒 ฟังก์ชันเช็คเวลารวมถึงเช็คสวิตช์หลักที่ควบคุมโดยดีเจ
         function checkSystemTime() {
             const now = new Date();
-            const currentTimeStr = now.toTimeString().substring(0, 5); // รูปแบบ "HH:MM"
+            const currentTimeStr = now.toTimeString().substring(0, 5);
             
             const start = cloudSystemSettings.startTime;
             const end = cloudSystemSettings.endTime;
@@ -312,11 +311,9 @@
             if (start <= end) {
                 isTimeValid = (currentTimeStr >= start && currentTimeStr <= end);
             } else {
-                // รองรับข้ามวัน เช่น 17:00 ถึง 01:00 น. ของวันถัดไป
                 isTimeValid = (currentTimeStr >= start || currentTimeStr <= end);
             }
 
-            // ระบบจะถือว่า "เปิด" ก็ต่อเมื่อ ดีเจเปิดสวิตช์ค้างไว้ (isActive) และ อยู่ในช่วงเวลาบริการ
             const isSystemOpen = cloudSystemSettings.isActive && isTimeValid;
 
             const submitBtn = document.getElementById('submitBtn');
@@ -337,7 +334,6 @@
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.className = "w-full bg-slate-800 text-slate-500 font-bold text-sm py-3.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-slate-700/50";
-                    
                     if (!cloudSystemSettings.isActive) {
                         submitBtn.innerHTML = `<i class="fa-solid fa-lock text-rose-500"></i> ขออภัย ดีเจปิดระบบรับเพลงชั่วคราว (Close by DJ)`;
                     } else {
@@ -355,7 +351,6 @@
             }
         }
 
-        // ดึงการตั้งค่าระบบเปิด-ปิดจากดีเจบน Firebase Real-time
         onValue(systemSettingsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -363,11 +358,9 @@
                 cloudSystemSettings.startTime = data.startTime || "17:00";
                 cloudSystemSettings.endTime = data.endTime || "00:00";
             } else {
-                // ถ้ายังไม่มีข้อมูลในระบบคลาวด์ ให้ค่าเริ่มต้นเป็น 17.00 - 24.00 น.
                 set(systemSettingsRef, cloudSystemSettings);
             }
             
-            // อัปเดตอินพุตฝั่งดีเจให้ตรงกับฐานข้อมูลคลาวด์
             const startInput = document.getElementById('configStartTime');
             const endInput = document.getElementById('configEndTime');
             const toggleBtn = document.getElementById('configToggleBtn');
@@ -386,19 +379,17 @@
             checkSystemTime();
         });
 
-        // ฟังก์ชันสั่งอัปเดตการตั้งค่าเวลาขึ้น Firebase (ดีเจเป็นคนสั่ง)
         window.updateSystemSettingsOnCloud = function() {
             const start = document.getElementById('configStartTime').value;
             const end = document.getElementById('configEndTime').value;
             update(systemSettingsRef, { startTime: start, endTime: end });
         }
 
-        // ฟังก์ชันสั่งสลับสถานะเปิด-ปิดระบบสวิตช์ขึ้น Firebase (ดีเจเป็นคนกดคลิก)
         window.toggleSystemActiveOnCloud = function() {
             update(systemSettingsRef, { isActive: !cloudSystemSettings.isActive });
         }
 
-        // ตรวจสอบข้อมูล Real-time คิวเพลงจาก Firebase
+        // ฟังชันก์ตรวจสอบ Real-time คิวเพลงจาก Firebase
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -412,9 +403,16 @@
             renderQueue();          
             renderCustomerQueue();  
             checkSystemTime(); 
+
+            // ⚡ [AUTOMATION SYSTEM]: หากดีเจเปิดหน้าแอปไว้ และไม่มีคิวใดเปิดเล่นอยู่ ให้ดึงเพลงขึ้นมาเล่นเองอัตโนมัติ
+            if (isPlayerReady) {
+                const playingSong = songQueue.find(item => item.status === 'playing');
+                if (!playingSong) {
+                    playNextSong();
+                }
+            }
         });
 
-        // คอยรีเช็คเวลาทุก 10 วินาทีอัตโนมัติ
         setInterval(checkSystemTime, 10000);
 
         window.handleCustomerTableChange = function() {
@@ -606,7 +604,6 @@
         window.submitSong = function(event) {
             event.preventDefault();
 
-            // 🛑 [ระบบตรวจสอบความพร้อมของเซิร์ฟเวอร์]: ตรวจสอบเงื่อนไขเปิด-ปิดจริงก่อนเพิ่มลงฐานข้อมูล
             const now = new Date();
             const currentTimeStr = now.toTimeString().substring(0, 5);
             const start = cloudSystemSettings.startTime;
@@ -623,7 +620,6 @@
             let videoUrl = document.getElementById('selectedVideoUrl').value;
             const timestamp = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-            // 🛑 [ระบบตรวจสอบโควตา]: นับเพลงสถานะ pending/playing ของโต๊ะนั้น ๆ
             const activeSongsForTable = songQueue.filter(item => 
                 String(item.table) === String(tableNo) && 
                 (item.status === 'pending' || item.status === 'playing')
@@ -656,7 +652,7 @@
             push(songsRef, newSong).then(() => {
                 const alertBox = document.getElementById('statusAlert');
                 alertBox.className = "block text-center p-4 rounded-xl font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg animate-bounce";
-                alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ส่งคำขอเพลงเข้าสู่ระบบคลาวด์สำเร็จแล้ว!`;
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ส่งคำขอเพลงเข้าสู่ระบบสำเร็จแล้ว!`;
 
                 document.getElementById('songName').value = '';
                 document.getElementById('selectedVideoUrl').value = '';
@@ -780,10 +776,10 @@
                 if (currentTab === 'pending') {
                     actionButtonsHtml = `
                         <button onclick="${playCall}" class="flex-1 text-center bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-medium py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1">
-                            <i class="fa-brands fa-youtube"></i> เล่นในเว็บ
+                            <i class="fa-brands fa-youtube"></i> บังคับกดเล่น
                         </button>
                         <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 py-1.5 px-3 rounded-lg text-[11px] transition-all cursor-pointer">
-                            <i class="fa-solid fa-check mr-1"></i> เสร็จสิ้น
+                            <i class="fa-solid fa-check mr-1"></i> ข้ามไปจบ
                         </button>
                         <button onclick="removeQueuePermanently('${item.id}')" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
                             <i class="fa-solid fa-trash"></i>
@@ -792,10 +788,10 @@
                 } else if (currentTab === 'playing') {
                     actionButtonsHtml = `
                         <div class="flex-1 text-xs text-rose-400 flex items-center gap-1.5 font-medium px-1">
-                            <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> กำลังออนแอร์...
+                            <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> กำลังเล่นอัตโนมัติ...
                         </div>
                         <button onclick="moveToStatus('${item.id}', 'completed')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-4 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1">
-                            <i class="fa-solid fa-circle-check"></i> จบเพลงนี้
+                            <i class="fa-solid fa-circle-check"></i> จบเพลงนี้ (คิวถัดไปจะต่อทันที)
                         </button>
                         <button onclick="removeQueuePermanently('${item.id}', true)" class="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 p-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-sm" title="ลบเพลงนี้ออก">
                             <i class="fa-solid fa-trash"></i>
@@ -886,11 +882,12 @@
                 
                 const updates = {};
                 updates[`/songs/${songQueue[index].id}/order`] = nextOrder;
-                updates[`/songs/${songQueue[prevPendingIndex].id}/order`] = currentOrder;
+                updates[`/songs/${songQueue[nextPendingIndex].id}/order`] = currentOrder;
                 update(ref(db), updates);
             }
         }
 
+        // 🔄 [AUTOMATION LOGIC]: ฟังก์ชันเลือกคิวถัดไปขึ้นมาเปิดต่อโดยอัตโนมัติ
         function playNextSong() {
             const nextSong = songQueue.find(item => item.status === 'pending');
             
@@ -900,6 +897,9 @@
                 
                 if (ytId) {
                     window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
+                } else {
+                    // หากไม่ใช่ลิงก์วิดีโอตรง ให้ข้ามไปจบเพื่อรันคิวถัดไปแทน
+                    window.moveToStatus(nextSong.id, 'completed');
                 }
             } else {
                 currentlyPlayingId = null;
@@ -909,7 +909,7 @@
                     targetWrapper.innerHTML = `
                         <div class="text-center p-4">
                             <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                            <p>คิวเพลงหมดแล้ว! เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                            <p>คิวเพลงหมดแล้ว! ระบบสตรีมมิ่งพร้อมทำงานทันทีที่มีลูกค้าส่งคิวใหม่เข้ามา 🎵</p>
                         </div>
                     `;
                 }
@@ -918,8 +918,7 @@
         }
 
         window.initAndPlayPlayer = function(videoId, songTitle, queueId) {
-            if (typeof YT === 'undefined' || !YT.Player) {
-                alert('ระบบสตรีมมิ่งของ YouTube กำลังเตรียมการ กรุณารอ 2-3 วินาทีแล้วกดใหม่อีกครั้งครับ');
+            if (!isPlayerReady || typeof YT === 'undefined' || !YT.Player) {
                 return;
             }
 
@@ -932,15 +931,13 @@
             });
             update(ref(db), updates);
             
-            const playerContainer = document.getElementById('videoPlayerContainer');
             const alertBox = document.getElementById('playerFallbackAlert');
-            
             if (alertBox) alertBox.classList.add('hidden'); 
-            if (playerContainer) playerContainer.classList.remove('hidden');
 
             const targetWrapper = document.getElementById('youtubePlayer');
             if (!targetWrapper) return;
 
+            // หากเคยสร้างอ็อบเจกต์ Player ไว้แล้ว ให้สั่งโหลดคิวใหม่เข้าเครื่องเล่นทันทีโดยไม่ต้องคลิก
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 const fallbackLink = document.getElementById('fallbackExternalLink');
@@ -962,6 +959,7 @@
                         if (fAlert) fAlert.classList.remove('hidden');
                     },
                     'onStateChange': (event) => {
+                        // 🔄 เมื่อเพลงปัจจุบันเล่นจบ (ENDED) ให้ข้ามไปดึงคิวรอถัดไปมาสตรีมมิ่งต่อทันที
                         if (event.data === YT.PlayerState.ENDED) {
                             if (queueId) {
                                 window.moveToStatus(queueId, 'completed');
@@ -978,6 +976,16 @@
             if (fallbackLink) fallbackLink.href = `https://www.youtube.com/watch?v=${videoId}`;
         }
 
+        // ตัวเริ่มต้นการโหลด Iframe API ของ YouTube เมื่อเปิดเว็บ
+        window.onYouTubeIframeAPIReady = function() {
+            isPlayerReady = true;
+            // เช็คและสตรีมเพลงแรกค้างทันทีหากมีคิวรอเล่นอยู่ก่อนหน้าแล้ว
+            const playingSong = songQueue.find(item => item.status === 'playing');
+            if (!playingSong) {
+                playNextSong();
+            }
+        }
+
         window.closeVideoPlayer = function() {
             if (player && typeof player.stopVideo === 'function') player.stopVideo();
             if (currentlyPlayingId) window.moveToStatus(currentlyPlayingId, 'completed');
@@ -987,7 +995,7 @@
                 ytPlayer.innerHTML = `
                     <div class="text-center p-4">
                         <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                        <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                        <p>เครื่องเล่นถูกปิดอยู่ ระบบจะเปิดอัตโนมัติเมื่อมีเพลงใหม่เข้ามา</p>
                     </div>
                 `;
             }
@@ -1042,6 +1050,12 @@
             }
             syncCurrentlyPlayingTitle();
             renderQueue();
+            
+            // สั่งรันคิวทันทีหากสลับมาหน้าดีเจแล้วยังไม่มีเพลงเปิด
+            const playingSong = songQueue.find(item => item.status === 'playing');
+            if (!playingSong && isPlayerReady) {
+                playNextSong();
+            }
         }
 
         function switchToCustomerView() {
