@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Request System - Cloud Real-time</title>
-    <!-- Tailwind CSS (V4) & FontAwesome -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -16,131 +15,109 @@
         ::-webkit-scrollbar-thumb:hover { background: #10b981; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white">
+<body class=\"bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white\">
 
-    <!-- Header Navigation -->
-    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-lg p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center max-w-7xl">
-            <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center tracking-wide">
-                <i class="fa-solid fa-music mr-3 animate-bounce" style="animation-duration: 2s;"></i>
-                <span>ร้านนี้...อยากฟังเพลงอะไร<span class="text-white font-light">ขอมา!</span></span>
-            </h1>
-            <button onclick="handleRoleToggle()" id="roleBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-5 rounded-full text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer flex items-center gap-2">
-                <i class="fa-solid fa-user-gear"></i> <span>สลับไปหน้า "ดีเจ"</span>
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-rose-500 via-purple-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-spin-slow">
+                    <i class="fa-solid fa-compact-disc text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v2.0</p>
+                </div>
+            </div>
+            
+            <button id="roleBtn" onclick="handleRoleToggle()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs py-2 px-4 rounded-xl shadow-md transition-all flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-user-gear mr-1"></i> สลับไปหน้า "ดีเจ"
             </button>
         </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="container mx-auto px-4 py-6 max-w-7xl">
+    <main class="max-w-6xl mx-auto p-4 md:py-8">
         
-        <!-- ================= CUSTOMER VIEW (หน้าจอฝั่งลูกค้า) ================= -->
-        <section id="customerView" class="block space-y-6 max-w-4xl mx-auto py-4">
-            
-            <!-- ป้ายแสดงชื่อเพลงที่กำลังเล่นอยู่ สำหรับให้ลูกค้าเห็น -->
-            <div class="bg-slate-900 border border-rose-500/30 p-4 rounded-2xl shadow-xl flex items-center gap-4 relative overflow-hidden">
-                <div class="absolute top-0 left-0 h-full w-1 bg-rose-500"></div>
-                <div class="flex h-3 w-3 relative shrink-0">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+        <div id="customerView" class="block space-y-6 animate-fade-in">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center gap-4 overflow-hidden relative shadow-inner">
+                <div class="flex items-center gap-2 shrink-0 bg-rose-500/10 text-rose-400 font-black text-xs px-3 py-1.5 rounded-xl border border-rose-500/20">
+                    <i id="vinylIcon" class="fa-solid fa-compact-disc animate-spin text-base hidden"></i>
+                    <span>กำลังเล่น:</span>
                 </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-xs font-semibold text-rose-400 tracking-wider uppercase">ขณะนี้กำลังเปิดเพลง</p>
-                    <h3 id="customerPlayingTitle" class="text-sm md:text-base text-slate-100 font-medium truncate mt-0.5">ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง</h3>
-                </div>
-                <div class="text-2xl text-slate-700 animate-spin shrink-0 hidden sm:block" id="vinylIcon" style="animation-duration: 3s;">
-                    <i class="fa-solid fa-compact-disc"></i>
+                <div class="flex-1 overflow-hidden">
+                    <p id="customerPlayingTitle" class="text-xs md:text-sm font-semibold text-slate-200 truncate">ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง</p>
                 </div>
             </div>
 
-            <!-- ฟอร์มส่งคำขอเพลง -->
-            <div class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-2xl relative">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-t-2xl"></div>
-                <h2 class="text-xl font-semibold mb-6 text-center text-slate-200 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-paper-plane text-emerald-400"></i>ส่งคำขอเพลงของคุณ (ระบบเชื่อมต่อ YouTube Real-time)
-                </h2>
-                
-                <form id="requestForm" onsubmit="submitSong(event)" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2"><i class="fa-solid fa-chair mr-1.5 text-xs"></i>หมายเลขโต๊ะของคุณ *</label>
-                        <select id="tableNo" required onchange="handleCustomerTableChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer">
-                            <option value="">-- กรุณาเลือกโต๊ะของคุณ --</option>
-                        </select>
-                    </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+                <div class="absolute -right-16 -top-16 w-36 h-36 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all duration-700"></div>
+                <div class="absolute -left-16 -bottom-16 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700"></div>
 
-                    <div class="relative">
-                        <label class="block text-sm font-medium text-slate-400 mb-2"><i class="fa-solid fa-magnifying-glass mr-1.5 text-xs"></i>ชื่อเพลง หรือ ชื่อศิลปินคนร้อง *</label>
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="text" id="songName" required autocomplete="off" placeholder="พิมพ์ชื่อเพลง หรือชื่อคนร้องเพื่อค้นหาคลิปจริง..." 
-                                class="flex-1 bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                            <button type="button" onclick="searchSongList()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer group">
-                                <i class="fa-solid fa-magnifying-glass group-hover:scale-110 transition-transform text-rose-400"></i> ค้นหาบน YouTube
-                            </button>
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
+                    <h2 class="font-extrabold text-base text-white">ส่งคำขอเพลงของคุณที่นี่</h2>
+                </div>
+
+                <form onsubmit="submitSong(event)" class="space-y-4 relative z-10">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-[11px] font-bold text-slate-400 mb-1">หมายเลขโต๊ะ</label>
+                            <select id="tableNo" onchange="handleCustomerTableChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs font-bold rounded-xl p-3 focus:outline-none transition-colors cursor-pointer shadow-sm" required>
+                                <option value="" disabled selected>เลือกโต๊ะ</option>
+                            </select>
                         </div>
-                        
-                        <!-- Dropdown Suggestions -->
-                        <div id="youtubeSongsList" class="hidden mt-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden max-h-80 overflow-y-auto divide-y divide-slate-800/80 shadow-2xl absolute w-full z-50"></div>
+                        <div class="col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-400 mb-1">ชื่อเพลง, ศิลปิน หรือ ลิงก์ YouTube</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="songName" placeholder="เช่น ทรงอย่างแบด Paper Planes" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-100 text-xs rounded-xl p-3 focus:outline-none transition-colors shadow-sm" required>
+                                <button type="button" onclick="searchSongList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <input type="hidden" id="selectedVideoUrl">
+                    <input type="hidden" id="selectedVideoUrl" value="">
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3.5 px-4 rounded-xl transition-all shadow-xl shadow-emerald-900/20 transform active:scale-[0.99] cursor-pointer text-base mt-2 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-paper-plane"></i> ส่งคำขอเพลงเข้าสู่ระบบ
+                    <div id="youtubeSongsList" class="hidden bg-slate-950 border border-slate-800/80 rounded-2xl max-h-60 overflow-y-auto divide-y divide-slate-900/60 shadow-inner"></div>
+
+                    <div id="statusAlert" class="hidden"></div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-sm py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-plus"></i> ส่งคิวเพลงเข้าสู่ระบบระบบคลาวด์
                     </button>
                 </form>
             </div>
-            
-            <div id="statusAlert" class="hidden text-center p-4 rounded-xl font-medium transition-all duration-300"></div>
 
-            <!-- ================= NEW: SECTION ตรวจสอบคิวเพลงประจำโต๊ะสำหรับลูกค้า ================= -->
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                    <h3 class="text-base font-semibold text-slate-200 flex items-center gap-2">
-                        <i class="fa-solid fa-list-ol text-amber-400"></i> คิวเพลงของโต๊ะคุณ
-                    </h3>
-                    <!-- Dropdown ให้กดเลือกดูรายโต๊ะในหน้าลูกค้า -->
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span class="text-xs text-slate-400">เลือกดูโต๊ะ:</span>
-                        <select id="customerTableFilter" onchange="handleCustomerFilterChange()" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl p-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer min-w-[120px]">
-                            <option value="none">-- เลือกโต๊ะ --</option>
-                        </select>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-slate-400 text-sm"></i>
+                        <h2 class="font-bold text-sm text-slate-300">ติดตามคิวเพลงของโต๊ะคุณ</h2>
                     </div>
+                    <select id="customerTableFilter" onchange="handleCustomerFilterChange()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
+                        <option value="none">เลือกโต๊ะเพื่อกรองดูคิว</option>
+                    </select>
                 </div>
-
-                <!-- รายการคิวเพลงประจำโต๊ะที่เลือก จะมาแสดงตรงนี้ -->
-                <div id="customerQueueList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                    <div class="text-center py-10 text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
-                        <i class="fa-solid fa-chair text-3xl text-slate-800"></i>
-                        <span>กรุณาเลือกหมายเลขโต๊ะของคุณด้านบน เพื่อตรวจสอบคิวเพลง</span>
+                <div id="customerQueueList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     </div>
-                </div>
             </div>
+        </div>
 
-        </section>
-
-        <!-- ================= ADMIN / DJ VIEW (หน้าจอฝั่งดีเจ) ================= -->
-        <section id="adminView" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div id="adminView" class="hidden space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- [ฝั่งซ้าย - 7 ส่วน] เครื่องเล่นวิดีโอหลัก ดีเจ -->
-                <div class="lg:col-span-7 space-y-4 lg:sticky lg:top-24">
-                    <div id="videoPlayerContainer" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-2xl space-y-3">
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                            <span class="text-sm font-semibold text-rose-400 flex items-center gap-2 min-w-0 flex-1">
-                                <span class="flex h-2.5 w-2.5 relative shrink-0">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-                                </span>
-                                <span class="truncate">กำลังเล่นอยู่: <span id="playingTitle" class="text-slate-200 font-normal">ยังไม่ได้เลือกเพลง</span></span>
-                            </span>
-                            <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-1.5 px-3 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
-                                <i class="fa-solid fa-xmark mr-1"></i> ปิดเครื่องเล่น
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col gap-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                                <h2 class="font-black text-sm text-white truncate">เครื่องเล่นสตรีมมิ่ง: <span id="playingTitle" class="text-slate-400 font-medium">ยังไม่ได้เลือกเพลง</span></h2>
+                            </div>
+                            <button onclick="closeVideoPlayer()" class="text-xs bg-slate-800 hover:bg-rose-600 hover:text-white border border-slate-700 px-3 py-1 rounded-xl transition-all cursor-pointer shadow-sm">
+                                <i class="fa-solid fa-power-off mr-1"></i> ปิดเครื่องเล่น
                             </button>
                         </div>
-
-                        <!-- กรอบฝัง API Player -->
-                        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-950 shadow-inner">
-                            <div id="youtubePlayer" class="w-full h-full flex items-center justify-center text-slate-600 text-sm">
+                        
+                        <div id="videoPlayerContainer" class="hidden w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-black relative shadow-inner">
+                            <div id="youtubePlayer" class="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                                 <div class="text-center p-4">
                                     <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
                                     <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
@@ -148,94 +125,79 @@
                             </div>
                         </div>
 
-                        <!-- กล่องข้อความแจ้งเตือนกรณีเจอ Error -->
-                        <div id="playerFallbackAlert" class="hidden p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div class="text-xs text-rose-400">
-                                <i class="fa-solid fa-triangle-exclamation mr-1.5 text-rose-500"></i>
-                                <strong>Error 153:</strong> คลิปนี้บล็อกการเล่นบนแอปภายนอก
+                        <div id="playerFallbackAlert" class="hidden p-3 bg-amber-950/40 border border-amber-500/20 text-amber-400 rounded-xl text-xs flex flex-col gap-2 shadow-sm">
+                            <div class="flex items-center gap-2 font-semibold">
+                                <i class="fa-solid fa-triangle-exclamation"></i> เพลงนี้ไม่อนุญาตให้เล่นแบบฝังในเว็บ (Embed Blocked By Owner)
                             </div>
-                            <a id="fallbackExternalLink" href="#" target="_blank" class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold py-1.5 px-3 rounded-lg transition-all shadow-md flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดเล่นบน YouTube หลัก
+                            <p class="font-light">เจ้าของคลิปจำกัดสิทธิ์การเล่น แนะนำให้กดปุ่มเปิดฟังในแท็บภายนอกแทนครับ</p>
+                            <a id="fallbackExternalLink" href="#" target="_blank" class="w-max bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition-all mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่ภายนอกเว็บ
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- [ฝั่งขวา - 5 ส่วน] แท็บบริหารจัดการคิวเพลง -->
-                <div class="lg:col-span-5 space-y-4">
-                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-md space-y-3">
-                        <div class="flex justify-between items-center px-1">
-                            <span class="text-xs font-medium text-slate-400">จัดการระบบคิวเพลงระบบ Real-time</span>
-                            <button onclick="clearAllQueue()" class="text-[10px] bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/20 py-1 px-2 rounded-lg transition-all cursor-pointer">
-                                ล้างข้อมูลทั้งหมด
-                            </button>
-                        </div>
-                        
-                        <!-- ช่องเลือกกรองตามรายโต๊ะ (Filter by Table) สำหรับดีเจ -->
-                        <div class="px-1">
-                            <label class="block text-[11px] text-slate-400 mb-1 font-medium"><i class="fa-solid fa-filter text-amber-400 mr-1"></i> กรองดูคิวตามหมายเลขโต๊ะ:</label>
-                            <select id="adminTableFilter" onchange="handleTableFilterChange()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
-                                <option value="all">แสดงคิวทุกโต๊ะ (ทั้งหมด)</option>
+                <div class="lg:col-span-1 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-wide mb-1.5">ตัวกรองแยกตามโต๊ะ</label>
+                            <select id="adminTableFilter" onchange="handleTableFilterChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 text-slate-200 text-xs font-bold rounded-xl p-3 focus:outline-none transition-colors cursor-pointer shadow-sm">
+                                <option value="all">แสดงคิวเพลงจาก "ทุกโต๊ะ"</option>
                             </select>
                         </div>
 
-                        <!-- Navigation Tabs (ยังไม่ได้เล่น | กำลังเล่น | เล่นเสร็จแล้ว) -->
-                        <div class="grid grid-cols-3 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                            <button onclick="switchQueueTab('pending')" id="tabBtn-pending" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-amber-400 bg-slate-900 border border-slate-800">
-                                <span>ยังไม่ได้เล่น</span>
-                                <span id="count-pending" class="text-[10px] px-1.5 py-0.2 bg-amber-500/20 rounded-full font-bold">0</span>
+                        <div class="pt-2 border-t border-slate-800/80">
+                            <button onclick="clearAllQueue()" class="w-full bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white font-bold text-xs py-3 px-4 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-dumpster-fire"></i> ล้างข้อมูลคิวเพลงทั้งหมดในระบบคลาวด์
                             </button>
-                            <button onclick="switchQueueTab('playing')" id="tabBtn-playing" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-200">
-                                <span>กำลังเล่น</span>
-                                <span id="count-playing" class="text-[10px] px-1.5 py-0.2 bg-rose-500/20 rounded-full font-bold text-rose-400">0</span>
-                            </button>
-                            <button onclick="switchQueueTab('completed')" id="tabBtn-completed" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-200">
-                                <span>เล่นเสร็จแล้ว</span>
-                                <span id="count-completed" class="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 rounded-full font-bold text-emerald-400">0</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- รายการคิวเพลงสำหรับดีเจ -->
-                    <div id="queueList" class="space-y-3 max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-1">
-                        <div id="emptyState" class="text-center py-16 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center">
-                            <i class="fa-solid fa-compact-disc text-4xl text-slate-700 animate-spin mb-3" style="animation-duration: 4s;"></i>
-                            <p id="emptyStateText" class="text-slate-500 text-xs">ไม่มีคิวเพลงในหมวดหมู่นี้...</p>
                         </div>
                     </div>
                 </div>
-
             </div>
-        </section>
 
+            <div class="space-y-4">
+                <div class="grid grid-cols-3 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+                    <button id="tabBtn-pending" onclick="switchQueueTab('pending')" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 border border-slate-800 shadow-inner text-amber-400 bg-slate-900">
+                        <span class="font-black text-sm" id="count-pending">0</span>
+                        <span>📥 คิวรอเล่น</span>
+                    </button>
+                    <button id="tabBtn-playing" onclick="switchQueueTab('playing')" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-200">
+                        <span class="font-black text-sm" id="count-playing">0</span>
+                        <span>🔴 กำลังเล่น</span>
+                    </button>
+                    <button id="tabBtn-completed" onclick="switchQueueTab('completed')" class="py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-200">
+                        <span class="font-black text-sm" id="count-completed">0</span>
+                        <span>✅ เล่นแล้ว</span>
+                    </button>
+                </div>
+
+                <div id="queueList" class="space-y-2.5 min-h-[200px]">
+                    <div id="emptyState" class="text-center py-12 text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl bg-slate-900/40 flex flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-folder-open text-3xl text-slate-700"></i>
+                        <span id="emptyStateText">ยังไม่มีคิวเพลงที่รอเล่นในระบบ...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- ================= PASSWORD MODAL WINDOW ================= -->
-    <div id="passwordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative space-y-4">
-            <div class="text-center">
-                <div class="mx-auto w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center text-xl mb-3 border border-amber-500/20">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-slate-200">เข้าสู่พื้นที่เฉพาะสำหรับ "ดีเจ"</h3>
-                <p class="text-xs text-slate-400 mt-1">กรุณากรอกรหัสผ่านเพื่อจัดการระบบหลังบ้าน</p>
+    <div id="passwordModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-scale-up">
+            <button onclick="closePasswordModal()" class="absolute right-4 top-4 text-slate-400 hover:text-white text-sm bg-slate-800 p-1.5 px-2.5 rounded-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            <div class="text-center space-y-2 mb-4">
+                <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto text-lg border border-amber-500/20"><i class="fa-solid fa-lock"></i></div>
+                <h3 class="font-black text-base text-white">พื้นที่เฉพาะของ "ดีเจร้าน"</h3>
+                <p class="text-[11px] text-slate-400">กรุณากรอกรหัสผ่านเพื่อสลับไปหน้าควบคุมคิวเพลง</p>
             </div>
-            <div>
-                <input type="password" id="djPasswordInput" placeholder="กรอกรหัสผ่านที่นี่..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-center text-white tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-mono">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="closePasswordModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-xl transition-all border border-slate-700 cursor-pointer">
-                    ยกเลิก
-                </button>
-                <button onclick="verifyDjPassword()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer">
-                    ยืนยันรหัส
-                </button>
+            <div class="space-y-3">
+                <input type="password" id="djPasswordInput" placeholder="กรอกรหัสผ่านเข้าสู่ระบบ" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 text-center text-sm rounded-xl p-3 focus:outline-none transition-colors shadow-sm font-mono tracking-widest text-amber-400">
+                <button onclick="verifyDjPassword()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs py-3 px-4 rounded-xl shadow-lg transition-all cursor-pointer">ยืนยันรหัสผ่านเพื่อเข้าสู่ระบบ</button>
             </div>
         </div>
     </div>
 
-    <!-- โหลดสคริปต์เดย์พอนเดนซี่หลัก (YouTube & Firebase SDK) -->
     <script src="https://www.youtube.com/iframe_api"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -261,18 +223,18 @@
         
         let currentRole = 'customer';
         let currentTab = 'pending'; 
-        let selectedTableFilter = 'all'; // สำหรับดีเจ
-        let selectedCustomerTable = 'none'; // สำหรับลูกค้าใช้ดูคิวตัวเอง
+        let selectedTableFilter = 'all'; 
+        let selectedCustomerTable = 'none'; 
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
 
-        window.onload = function() {
-            const tableSelect = document.getElementById('tableNo');
-            const adminFilterSelect = document.getElementById('adminTableFilter');
-            const customerFilterSelect = document.getElementById('customerTableFilter');
+        // สร้างตัวเลือกโต๊ะ 1-30 โดยไม่ใช้ window.onload ในสคริปต์ Module
+        const tableSelect = document.getElementById('tableNo');
+        const adminFilterSelect = document.getElementById('adminTableFilter');
+        const customerFilterSelect = document.getElementById('customerTableFilter');
 
-            // วนลูปสร้างตัวเลือกโต๊ะ 1-30 ในจุดต่างๆ
+        if (tableSelect && adminFilterSelect && customerFilterSelect) {
             for (let i = 1; i <= 30; i++) {
                 let optCustomer = document.createElement('option');
                 optCustomer.value = i;
@@ -289,17 +251,21 @@
                 optCustFilter.innerHTML = `โต๊ะที่ ${i}`;
                 customerFilterSelect.appendChild(optCustFilter);
             }
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const tableParam = urlParams.get('table');
-            if(tableParam) {
-                tableSelect.value = tableParam;
-                customerFilterSelect.value = tableParam;
-                selectedCustomerTable = tableParam;
-            }
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableParam = urlParams.get('table');
+        if(tableParam && tableSelect && customerFilterSelect) {
+            tableSelect.value = tableParam;
+            customerFilterSelect.value = tableParam;
+            selectedCustomerTable = tableParam;
+        }
 
-            document.getElementById('djPasswordInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') verifyDjPassword();
+        // ดักจับปุ่ม Enter ของรหัสผ่านดีเจ
+        const passwordInput = document.getElementById('djPasswordInput');
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') window.verifyDjPassword();
             });
         }
 
@@ -314,11 +280,10 @@
                 songQueue.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             syncCurrentlyPlayingTitle();
-            renderQueue();          // เรนเดอร์คิวฝั่งดีเจ
-            renderCustomerQueue();  // เรนเดอร์คิวประจำโต๊ะฝั่งลูกค้า
+            renderQueue();          
+            renderCustomerQueue();  
         });
 
-        // เมื่อลูกค้าเปลี่ยนโต๊ะที่ฟอร์มขอเพลง -> ซิงค์ไปตัวกรองดูคิวให้อัตโนมัติ
         window.handleCustomerTableChange = function() {
             const tableVal = document.getElementById('tableNo').value;
             if (tableVal) {
@@ -328,15 +293,14 @@
             }
         }
 
-        // เมื่อลูกค้าเลือกเปลี่ยนตัวกรองดูคิวเพลงเอง
         window.handleCustomerFilterChange = function() {
             selectedCustomerTable = document.getElementById('customerTableFilter').value;
             renderCustomerQueue();
         }
 
-        // ฟังก์ชันเรนเดอร์คิวเพลงประจำโต๊ะในหน้าของลูกค้า
         function renderCustomerQueue() {
             const container = document.getElementById('customerQueueList');
+            if (!container) return;
             if (selectedCustomerTable === 'none' || !selectedCustomerTable) {
                 container.innerHTML = `
                     <div class="text-center py-10 text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
@@ -347,7 +311,6 @@
                 return;
             }
 
-            // กรองเพลงทั้งหมดที่ผูกกับโต๊ะนี้
             const myTableSongs = songQueue.filter(item => String(item.table) === String(selectedCustomerTable));
 
             if (myTableSongs.length === 0) {
@@ -360,9 +323,7 @@
                 return;
             }
 
-            container.innerHTML = ''; // ล้างค่าเก่าออก
-
-            // หาคิวรอเล่นรวมทั้งหมด เพื่อเอาไว้คำนวณว่าเพลงที่รอนั้นเป็น "คิวรวมที่เท่าไหร่" ของร้าน
+            container.innerHTML = ''; 
             const allPendingSongs = songQueue.filter(item => item.status === 'pending');
 
             myTableSongs.forEach((item) => {
@@ -371,7 +332,6 @@
                 
                 let statusBadge = '';
                 if (item.status === 'pending') {
-                    // คำนวณหาลำดับคิวในระบบร้านขณะนั้น
                     const overallQueueNo = allPendingSongs.findIndex(s => s.id === item.id) + 1;
                     statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-2 py-0.5 rounded-full shrink-0 font-medium font-mono">⏳ รอเล่น (คิวร้าน #${overallQueueNo})</span>`;
                 } else if (item.status === 'playing') {
@@ -391,7 +351,6 @@
             });
         }
 
-        // ดีเจสลับเปลี่ยนตัวกรองโต๊ะ
         window.handleTableFilterChange = function() {
             selectedTableFilter = document.getElementById('adminTableFilter').value;
             renderQueue(); 
@@ -447,7 +406,7 @@
                                 const thumbnailUrl = item.snippet.thumbnails.default.url; 
                                 const directUrl = `https://www.youtube.com/watch?v=${videoId}`;
                                 
-                                const matchedDetail = detailsData.items.find(d => d.id === videoId);
+                                const matchedDetail = detailsData.items ? detailsData.items.find(d => d.id === videoId) : null;
                                 const rawDuration = matchedDetail ? matchedDetail.contentDetails.duration : '';
                                 const formattedDuration = formatISO8601Duration(rawDuration);
 
@@ -557,14 +516,14 @@
 
             if (activeSong) {
                 currentlyPlayingId = activeSong.id;
-                customerTitle.innerText = activeSong.song;
-                adminTitle.innerText = activeSong.song;
-                vinyl.classList.remove('hidden');
+                if (customerTitle) customerTitle.innerText = activeSong.song;
+                if (adminTitle) adminTitle.innerText = activeSong.song;
+                if (vinyl) vinyl.classList.remove('hidden');
             } else {
                 currentlyPlayingId = null;
-                customerTitle.innerText = "ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง";
-                adminTitle.innerText = "ยังไม่ได้เลือกเพลง";
-                vinyl.classList.add('hidden');
+                if (customerTitle) customerTitle.innerText = "ยังไม่ได้เลือกเพลง / ดีเจกำลังเตรียมเปิดเพลง";
+                if (adminTitle) adminTitle.innerText = "ยังไม่ได้เลือกเพลง";
+                if (vinyl) vinyl.classList.add('hidden');
             }
         }
 
@@ -572,6 +531,7 @@
             currentTab = tabName;
             ['pending', 'playing', 'completed'].forEach(t => {
                 const btn = document.getElementById(`tabBtn-${t}`);
+                if (!btn) return;
                 if (t === tabName) {
                     btn.className = `py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 border border-slate-800 shadow-inner ${
                         t === 'pending' ? 'text-amber-400 bg-slate-900' : t === 'playing' ? 'text-rose-400 bg-slate-900' : 'text-emerald-400 bg-slate-900'
@@ -583,10 +543,10 @@
             renderQueue();
         }
 
-        // เรนเดอร์คิวฝั่งดีเจ
         function renderQueue() {
             const queueList = document.getElementById('queueList');
             const emptyState = document.getElementById('emptyState');
+            if (!queueList || !emptyState) return;
             
             let filteredSongs = songQueue.filter(item => item.status === currentTab);
 
@@ -611,12 +571,15 @@
             const oldItems = queueList.querySelectorAll('.queue-item');
             oldItems.forEach(item => item.remove());
 
-            if (currentTab === 'pending') {
-                document.getElementById('emptyStateText').innerText = selectedTableFilter === 'all' ? "ยังไม่มีคิวเพลงที่รอเล่นในระบบ..." : `โต๊ะที่ ${selectedTableFilter} ยังไม่มีคิวเพลงที่รอเล่น...`;
-            } else if (currentTab === 'playing') {
-                document.getElementById('emptyStateText').innerText = "ขณะนี้ไม่มีเพลงที่กำลังเล่นอยู่...";
-            } else if (currentTab === 'completed') {
-                document.getElementById('emptyStateText').innerText = "ยังไม่มีประวัติเพลงที่เล่นเสร็จสิ้น...";
+            const emptyStateText = document.getElementById('emptyStateText');
+            if (emptyStateText) {
+                if (currentTab === 'pending') {
+                    emptyStateText.innerText = selectedTableFilter === 'all' ? "ยังไม่มีคิวเพลงที่รอเล่นในระบบ..." : `โต๊ะที่ ${selectedTableFilter} ยังไม่มีคิวเพลงที่รอเล่น...`;
+                } else if (currentTab === 'playing') {
+                    emptyStateText.innerText = "ขณะนี้ไม่มีเพลงที่กำลังเล่นอยู่...";
+                } else if (currentTab === 'completed') {
+                    emptyStateText.innerText = "ยังไม่มีประวัติเพลงที่เล่นเสร็จสิ้น...";
+                }
             }
 
             if (filteredSongs.length === 0) {
@@ -633,7 +596,7 @@
                 
                 const safeSongTitle = item.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 const ytId = extractYouTubeId(item.url);
-                const playCall = ytId ? `initAndPlayPlayer('${ytId}', '${safeSongTitle}', '${item.id}')` : `alert('กรุณาเปิดลิงก์ภายนอก')`;
+                const playCall = ytId ? `initAndPlayPlayer('${ytId}', '${safeSongTitle}', '${item.id}')` : `alert('ลิงก์นี้เปิดผ่านเว็บภายนอกเท่านั้น')`;
 
                 const thumbnailHtml = ytId 
                     ? `<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" class="w-16 h-10 object-cover rounded bg-slate-800 border border-slate-700/50 shrink-0" alt="Cover">`
@@ -771,7 +734,41 @@
             }
         }
 
+        // 🌟 [ฟังก์ชันหลักสำหรับการสตรีมต่อเนื่องอัตโนมัติ]
+        function playNextSong() {
+            // ค้นหาคิวเพลงถัดไปที่มีสถานะเป็น pending ตัวแรกสุดตามที่เรียงลำดับ (order) ไว้
+            const nextSong = songQueue.find(item => item.status === 'pending');
+            
+            if (nextSong) {
+                const ytId = extractYouTubeId(nextSong.url);
+                const safeSongTitle = nextSong.song.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                
+                if (ytId) {
+                    window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
+                }
+            } else {
+                // หากคิวเพลงในร้านหมดแล้ว ให้ทำการเคลียร์หน้าจอเครื่องเล่น
+                currentlyPlayingId = null;
+                syncCurrentlyPlayingTitle();
+                const targetWrapper = document.getElementById('youtubePlayer');
+                if (targetWrapper) {
+                    targetWrapper.innerHTML = `
+                        <div class="text-center p-4">
+                            <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
+                            <p>คิวเพลงหมดแล้ว! เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                        </div>
+                    `;
+                }
+                player = null;
+            }
+        }
+
         window.initAndPlayPlayer = function(videoId, songTitle, queueId) {
+            if (typeof YT === 'undefined' || !YT.Player) {
+                alert('ระบบสตรีมมิ่งของ YouTube กำลังเตรียมการ กรุณารอ 2-3 วินาทีแล้วกดใหม่อีกครั้งครับ');
+                return;
+            }
+
             const updates = {};
             updates[`/songs/${queueId}/status`] = 'playing';
             songQueue.forEach(item => {
@@ -784,14 +781,17 @@
             const playerContainer = document.getElementById('videoPlayerContainer');
             const alertBox = document.getElementById('playerFallbackAlert');
             
-            alertBox.classList.add('hidden'); 
-            playerContainer.classList.remove('hidden');
+            if (alertBox) alertBox.classList.add('hidden'); 
+            if (playerContainer) playerContainer.classList.remove('hidden');
 
             const targetWrapper = document.getElementById('youtubePlayer');
+            if (!targetWrapper) return;
 
+            // ถ้ามีอิลิเมนต์เครื่องเล่นเดิมอยู่แล้ว ให้เปลี่ยนวิดีโอทันที
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
-                document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+                const fallbackLink = document.getElementById('fallbackExternalLink');
+                if (fallbackLink) fallbackLink.href = `https://www.youtube.com/watch?v=${videoId}`;
                 return;
             }
 
@@ -800,27 +800,51 @@
             newPlayerDiv.id = 'youtubePlayerObject';
             targetWrapper.appendChild(newPlayerDiv);
 
+            // สร้าง Object เครื่องเล่นวิดีโอ พร้อมเชื่อมระบบตรวจจับเมื่อเพลงเล่นจบ (Autoplay)
             player = new YT.Player('youtubePlayerObject', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'autoplay': 1, 'playsinline': 1 },
-                events: { 'onError': () => document.getElementById('playerFallbackAlert').classList.remove('hidden') }
+                events: { 
+                    'onError': () => {
+                        const fAlert = document.getElementById('playerFallbackAlert');
+                        if (fAlert) fAlert.classList.remove('hidden');
+                    },
+                    // 🎯 จุดรวมระบบ Autoplay เมื่อตรวจพบสถานะวิดีโอเป็น ENDED (จบเพลง)
+                    'onStateChange': (event) => {
+                        if (event.data === YT.PlayerState.ENDED) {
+                            // สั่งเปลี่ยนสถานะเพลงปัจจุบันเป็นเสร็จสิ้น (completed) บน Firebase
+                            if (queueId) {
+                                window.moveToStatus(queueId, 'completed');
+                            }
+                            // หน่วงเวลาเซ็ตระบบฐานข้อมูล 1 วินาที จากนั้นเรียกคิวถัดไปขึ้นมาสตรีม
+                            setTimeout(() => {
+                                playNextSong();
+                            }, 1000);
+                        }
+                    }
+                }
             });
 
-            document.getElementById('fallbackExternalLink').href = `https://www.youtube.com/watch?v=${videoId}`;
+            const fallbackLink = document.getElementById('fallbackExternalLink');
+            if (fallbackLink) fallbackLink.href = `https://www.youtube.com/watch?v=${videoId}`;
         }
 
         window.closeVideoPlayer = function() {
             if (player && typeof player.stopVideo === 'function') player.stopVideo();
             if (currentlyPlayingId) window.moveToStatus(currentlyPlayingId, 'completed');
             
-            document.getElementById('youtubePlayer').innerHTML = `
-                <div class="text-center p-4">
-                    <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                    <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
-                </div>
-            `;
+            const ytPlayer = document.getElementById('youtubePlayer');
+            if (ytPlayer) {
+                ytPlayer.innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
+                        <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                    </div>
+                `;
+            }
             player = null; 
-            document.getElementById('playerFallbackAlert').classList.add('hidden');
+            const fAlert = document.getElementById('playerFallbackAlert');
+            if (fAlert) fAlert.classList.add('hidden');
         }
 
         window.copyToClipboard = function(url) {
@@ -834,23 +858,27 @@
         function openPasswordModal() {
             const modal = document.getElementById('passwordModal');
             const passInput = document.getElementById('djPasswordInput');
+            if (!modal || !passInput) return;
             passInput.value = ''; 
             modal.classList.replace('hidden', 'flex');
             passInput.focus();
         }
 
         window.closePasswordModal = function() {
-            document.getElementById('passwordModal').classList.replace('flex', 'hidden');
+            const modal = document.getElementById('passwordModal');
+            if (modal) modal.classList.replace('flex', 'hidden');
         }
 
         window.verifyDjPassword = function() {
-            const enteredPassword = document.getElementById('djPasswordInput').value;
+            const passInput = document.getElementById('djPasswordInput');
+            if (!passInput) return;
+            const enteredPassword = passInput.value;
             if (enteredPassword === DJ_PASSWORD) {
-                closePasswordModal();
+                window.closePasswordModal();
                 switchToAdminView();
             } else {
                 alert('❌ รหัสผ่านไม่ถูกต้อง');
-                document.getElementById('djPasswordInput').value = '';
+                passInput.value = '';
             }
         }
 
@@ -859,8 +887,10 @@
             document.getElementById('customerView').classList.replace('block', 'hidden');
             document.getElementById('adminView').classList.replace('hidden', 'block');
             const roleBtn = document.getElementById('roleBtn');
-            roleBtn.innerHTML = '<i class="fa-solid fa-music mr-1"></i> หน้าขอเพลง';
-            roleBtn.classList.replace('bg-emerald-500', 'bg-amber-500');
+            if (roleBtn) {
+                roleBtn.innerHTML = '<i class="fa-solid fa-music mr-1"></i> หน้าขอเพลง';
+                roleBtn.classList.replace('bg-emerald-500', 'bg-amber-500');
+            }
             syncCurrentlyPlayingTitle();
             renderQueue();
         }
@@ -870,8 +900,10 @@
             document.getElementById('customerView').classList.replace('hidden', 'block');
             document.getElementById('adminView').classList.replace('block', 'hidden');
             const roleBtn = document.getElementById('roleBtn');
-            roleBtn.innerHTML = '<i class="fa-solid fa-user-gear mr-1"></i> สลับไปหน้า "ดีเจ"';
-            roleBtn.classList.replace('bg-amber-500', 'bg-emerald-500');
+            if (roleBtn) {
+                roleBtn.innerHTML = '<i class="fa-solid fa-user-gear mr-1"></i> สลับไปหน้า "ดีเจ"';
+                roleBtn.classList.replace('bg-amber-500', 'bg-emerald-500');
+            }
             syncCurrentlyPlayingTitle();
             renderCustomerQueue();
         }
@@ -880,14 +912,18 @@
             if (confirm('คุณต้องการลบคิวเพลงนี้ออกจากระบบคลาวด์ใช่หรือไม่?')) {
                 if (isCurrentlyPlaying) {
                     if (player && typeof player.stopVideo === 'function') player.stopVideo();
-                    document.getElementById('youtubePlayer').innerHTML = `
-                        <div class="text-center p-4">
-                            <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                            <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
-                        </div>
-                    `;
+                    const ytPlayer = document.getElementById('youtubePlayer');
+                    if (ytPlayer) {
+                        ytPlayer.innerHTML = `
+                            <div class="text-center p-4">
+                                <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
+                                <p>เลือกปุ่ม "เล่นในเว็บ" ด้านขวามือเพื่อเริ่มสตรีม</p>
+                            </div>
+                        `;
+                    }
                     player = null;
-                    document.getElementById('playerFallbackAlert').classList.add('hidden');
+                    const fAlert = document.getElementById('playerFallbackAlert');
+                    if (fAlert) fAlert.classList.add('hidden');
                 }
                 remove(ref(db, `songs/${id}`));
             }
@@ -896,7 +932,7 @@
         window.clearAllQueue = function() {
             if(confirm('ต้องการล้างคิวเพลงทั้งหมดออกจากฐานข้อมูล?')) {
                 set(songsRef, null).then(() => {
-                    closeVideoPlayer();
+                    window.closeVideoPlayer();
                 });
             }
         }
