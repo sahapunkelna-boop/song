@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <h1 class="font-black text-sm md:text-base bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">ระบบขอเพลงในร้าน</h1>
-                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.5</p>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-mono">LIVE CLOUD SYSTEM v3.6</p>
                 </div>
             </div>
             
@@ -37,6 +37,7 @@
 
     <main class="max-w-6xl mx-auto p-4 md:py-8">
         
+        <!-- ==================== VIEW: CUSTOMER ==================== -->
         <div id="customerView" class="block space-y-6 animate-fade-in">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center gap-4 overflow-hidden relative shadow-inner">
                 <div class="flex items-center gap-2 shrink-0 bg-rose-500/10 text-rose-400 font-black text-xs px-3 py-1.5 rounded-xl border border-rose-500/20">
@@ -105,6 +106,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW: ADMIN (DJ) ==================== -->
         <div id="adminView" class="hidden space-y-6 animate-fade-in">
             
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
@@ -142,11 +144,18 @@
                             </button>
                         </div>
                         
+                        <!-- แก้ปัญหา Autoplay Policy: เพิ่มปุ่มกดเพื่อปลดล็อกระบบเสียงของบราวเซอร์ -->
+                        <div class="mb-1" id="unlockAutoplayWrapper">
+                            <button onclick="triggerFirstPlayUnlock()" class="w-full bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-black text-xs py-3 px-4 rounded-xl shadow-md animate-pulse cursor-pointer flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-volume-high"></i> ดีเจคลิกปุ่มนี้ 1 ครั้ง เพื่อเริ่มต้นระบบเสียงและคิวอัตโนมัติ
+                            </button>
+                        </div>
+
                         <div id="videoPlayerContainer" class="w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-black relative shadow-inner">
                             <div id="youtubePlayer" class="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                                 <div class="text-center p-4">
                                     <i class="fa-brands fa-youtube text-4xl mb-2 text-slate-700"></i>
-                                    <p id="playerStatusText">เปิดทิ้งไว้ตรงนี้... ระบบจะเล่นคิวเพลงแรกและคิวถัดไปให้คุณแบบอัตโนมัติ 🎧</p>
+                                    <p id="playerStatusText">คลิกปุ่มสีส้มด้านบน จากนั้นระบบจะเล่นคิวเพลงถัดไปให้คุณแบบอัตโนมัติยาวๆ ครับ 🎧</p>
                                 </div>
                             </div>
                         </div>
@@ -254,13 +263,8 @@
         let songQueue = []; 
         let player = null; 
         let currentlyPlayingId = null; 
-        let isPlayerReady = false; // ตรวจสอบสถานะการเชื่อมต่อ YouTube iframe
-
-        let cloudSystemSettings = {
-            isActive: true,
-            startTime: "17:00",
-            endTime: "00:00"
-        };
+        let isPlayerReady = false; 
+        let userHasInteracted = false; // ตรวจสอบว่าดีเจกดปุ่มยอมรับเสียงหรือยัง
 
         const tableSelect = document.getElementById('tableNo');
         const adminFilterSelect = document.getElementById('adminTableFilter');
@@ -389,7 +393,6 @@
             update(systemSettingsRef, { isActive: !cloudSystemSettings.isActive });
         }
 
-        // ฟังชันก์ตรวจสอบ Real-time คิวเพลงจาก Firebase
         onValue(songsRef, (snapshot) => {
             const data = snapshot.val();
             songQueue = [];
@@ -404,8 +407,8 @@
             renderCustomerQueue();  
             checkSystemTime(); 
 
-            // ⚡ [AUTOMATION SYSTEM]: หากดีเจเปิดหน้าแอปไว้ และไม่มีคิวใดเปิดเล่นอยู่ ให้ดึงเพลงขึ้นมาเล่นเองอัตโนมัติ
-            if (isPlayerReady) {
+            // ระบบดึงเพลงขึ้นมาเล่นเองอัตโนมัติหากดีเจกดเปิดสิทธิ์ใช้งานระบบเสียงแล้ว
+            if (isPlayerReady && userHasInteracted) {
                 const playingSong = songQueue.find(item => item.status === 'playing');
                 if (!playingSong) {
                     playNextSong();
@@ -887,7 +890,7 @@
             }
         }
 
-        // 🔄 [AUTOMATION LOGIC]: ฟังก์ชันเลือกคิวถัดไปขึ้นมาเปิดต่อโดยอัตโนมัติ
+        // ปรับปรุงฟังก์ชันเลือกคิวถัดไปขึ้นมาเปิดต่อโดยอัตโนมัติ
         function playNextSong() {
             const nextSong = songQueue.find(item => item.status === 'pending');
             
@@ -898,7 +901,6 @@
                 if (ytId) {
                     window.initAndPlayPlayer(ytId, safeSongTitle, nextSong.id);
                 } else {
-                    // หากไม่ใช่ลิงก์วิดีโอตรง ให้ข้ามไปจบเพื่อรันคิวถัดไปแทน
                     window.moveToStatus(nextSong.id, 'completed');
                 }
             } else {
@@ -914,6 +916,21 @@
                     `;
                 }
                 player = null;
+            }
+        }
+
+        // ฟังชันก์ดีเจกดปุ่มเพื่อปลดล็อก Autoplay ของเบราว์เซอร์
+        window.triggerFirstPlayUnlock = function() {
+            userHasInteracted = true;
+            const wrapper = document.getElementById('unlockAutoplayWrapper');
+            if(wrapper) wrapper.classList.add('hidden'); // ซ่อนปุ่มเมื่อปลดล็อกสิทธิ์แล้ว
+            
+            const playingSong = songQueue.find(item => item.status === 'playing');
+            if (playingSong) {
+                const ytId = extractYouTubeId(playingSong.url);
+                if (ytId) window.initAndPlayPlayer(ytId, playingSong.song, playingSong.id);
+            } else {
+                playNextSong();
             }
         }
 
@@ -937,7 +954,6 @@
             const targetWrapper = document.getElementById('youtubePlayer');
             if (!targetWrapper) return;
 
-            // หากเคยสร้างอ็อบเจกต์ Player ไว้แล้ว ให้สั่งโหลดคิวใหม่เข้าเครื่องเล่นทันทีโดยไม่ต้องคลิก
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(videoId);
                 const fallbackLink = document.getElementById('fallbackExternalLink');
@@ -952,14 +968,20 @@
 
             player = new YT.Player('youtubePlayerObject', {
                 height: '100%', width: '100%', videoId: videoId,
-                playerVars: { 'autoplay': 1, 'playsinline': 1 },
+                playerVars: { 
+                    'autoplay': 1, 
+                    'playsinline': 1
+                },
                 events: { 
+                    'onReady': (event) => {
+                        // ป้องกันปัญหาโดนบล็อกเสียงตอนเริ่มเล่นครั้งแรก
+                        event.target.playVideo();
+                    },
                     'onError': () => {
                         const fAlert = document.getElementById('playerFallbackAlert');
-                        if (fAlert) fAlert.classList.remove('hidden');
+                        if (fAlert) fAlert.className = fAlert.className.replace('hidden', 'block');
                     },
                     'onStateChange': (event) => {
-                        // 🔄 เมื่อเพลงปัจจุบันเล่นจบ (ENDED) ให้ข้ามไปดึงคิวรอถัดไปมาสตรีมมิ่งต่อทันที
                         if (event.data === YT.PlayerState.ENDED) {
                             if (queueId) {
                                 window.moveToStatus(queueId, 'completed');
@@ -976,13 +998,11 @@
             if (fallbackLink) fallbackLink.href = `https://www.youtube.com/watch?v=${videoId}`;
         }
 
-        // ตัวเริ่มต้นการโหลด Iframe API ของ YouTube เมื่อเปิดเว็บ
         window.onYouTubeIframeAPIReady = function() {
             isPlayerReady = true;
-            // เช็คและสตรีมเพลงแรกค้างทันทีหากมีคิวรอเล่นอยู่ก่อนหน้าแล้ว
-            const playingSong = songQueue.find(item => item.status === 'playing');
-            if (!playingSong) {
-                playNextSong();
+            if (userHasInteracted) {
+                const playingSong = songQueue.find(item => item.status === 'playing');
+                if (!playingSong) playNextSong();
             }
         }
 
@@ -1051,10 +1071,9 @@
             syncCurrentlyPlayingTitle();
             renderQueue();
             
-            // สั่งรันคิวทันทีหากสลับมาหน้าดีเจแล้วยังไม่มีเพลงเปิด
-            const playingSong = songQueue.find(item => item.status === 'playing');
-            if (!playingSong && isPlayerReady) {
-                playNextSong();
+            if (userHasInteracted && isPlayerReady) {
+                const playingSong = songQueue.find(item => item.status === 'playing');
+                if (!playingSong) playNextSong();
             }
         }
 
